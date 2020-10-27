@@ -1,0 +1,22 @@
+{
+  "name": "aimgef",
+  "version": "0.0.0",
+  "description": "Artificial Intelligence Music Generation Evaluation Framework",
+  "main": null,
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com:mstrcyork/aimgef.git"
+  },
+  "author": "Zongyu (Alex) Yin <zy728@york.ac.uk>, Tom Collins <tom.collins@york.ac.uk>",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/mstrcyork/aimgef/",
+  "dependencies": {
+    "@tonejs/midi": "^2.0.15",
+    "maia-util": "^0.2.25",
+    "maia-markov": "^0.0.6",
+    "nodeplotlib": "^0.6.5",
+    "seed-random": "^2.2.0",
+    "uuid": "^3.1.0"
+  }
+}
