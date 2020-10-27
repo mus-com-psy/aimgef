@@ -1,5 +1,5 @@
 // Export png?
-const exportPng = false
+const exportPng = true
 
 // Point sets to plot.
 let p1999 = {
@@ -388,26 +388,26 @@ let param = {
   "cvWidth": 3200,
   "cvHeight": 2000,
   "p1999": {
-    "x": 240, "y": 1800, "width": 1000, "height": 1000,
+    "x": 1860, "y": 1800, "width": 1000, "height": 1000,
     "notationWidth": 1400,
     "card": p1999.pointSet.length,
     "minX": mu.min_argmin(p1999.pointSet.map(function(p){ return p[0] }))[0],
     "maxX": mu.max_argmax(p1999.pointSet.map(function(p){ return p[0] }))[0],
     "minY": mu.min_argmin(p1999.pointSet.map(function(p){ return p[1] }).concat(p2322.pointSet.map(function(p){ return p[1] })))[0],
     "maxY": mu.max_argmax(p1999.pointSet.map(function(p){ return p[1] }).concat(p2322.pointSet.map(function(p){ return p[1] })))[0],
-    
+
    },
   "p2322": {
-    "x": 1860, "y": 1800, "width": 1000, "height": 1000,
+    "x": 240, "y": 1800, "width": 1000, "height": 1000,
     "notationWidth": 1400,
     "card": p2322.pointSet.length,
     "minX": mu.min_argmin(p2322.pointSet.map(function(p){ return p[0] }))[0],
     "maxX": mu.max_argmax(p2322.pointSet.map(function(p){ return p[0] }))[0],
     "minY": mu.min_argmin(p2322.pointSet.map(function(p){ return p[1] }).concat(p1999.pointSet.map(function(p){ return p[1] })))[0],
     "maxY": mu.max_argmax(p2322.pointSet.map(function(p){ return p[1] }).concat(p1999.pointSet.map(function(p){ return p[1] })))[0],
-    
+
    },
-  
+
 }
 // We want the plots to fit in whatever the width and height are, but we also want
 // them to be at the same scale.
@@ -451,46 +451,46 @@ function preload(){
 
 function setup(){
   let c = createCanvas(param.cvWidth, param.cvHeight)
-  background(215)
-  
+  // background(255)
+
   // Add the notation PNG files.
   let aspectRatio = p1999.notationImg.height/p1999.notationImg.width
   image(
-    p1999.notationImg, 20, 20,
+    p1999.notationImg, 1620, 20,
     param.p1999.notationWidth, aspectRatio*param.p1999.notationWidth
   )
   aspectRatio = p2322.notationImg.height/p2322.notationImg.width
   image(
-    p2322.notationImg, 1620, 20,
+    p2322.notationImg, 20, 20,
     param.p2322.notationWidth, aspectRatio*param.p2322.notationWidth
   )
-  
+
   // Plot p1999.
   p1999.pixelSet = p1999.pointSet.map(function(p){
     const propX = (p[0] - param.p1999.minX)/param.p1999.rngX
     const propY = (p[1] - param.p1999.minY)/param.p1999.rngY
     const pixlX = param.p1999.x + propX*param.p1999.width*param.p1999.sfX
     const pixlY = param.p1999.y - propY*param.p1999.height*param.p1999.sfY
-    ellipse(
-      pixlX, pixlY, 10, 10
-    )
+    // ellipse(
+    //   pixlX, pixlY, 10, 10
+    // )
     return [pixlX, pixlY]
   })
   // rect(240, 760, 1000, 1000)
 
-  
+
   // Plot p2322.
   p2322.pixelSet = p2322.pointSet.map(function(p){
     const propX = (p[0] - param.p2322.minX)/(param.p2322.maxX - param.p2322.minX)
     const propY = (p[1] - param.p2322.minY)/(param.p2322.maxY - param.p2322.minY)
     const pixlX = param.p2322.x + propX*param.p2322.width*param.p2322.sfX
     const pixlY = param.p2322.y - propY*param.p2322.height*param.p2322.sfY
-    ellipse(
-      pixlX, pixlY, 10, 10
-    )
+    // ellipse(
+    //   pixlX, pixlY, 10, 10
+    // )
     return [pixlX, pixlY]
   })
-  
+
   // Draw axis
   line(param.p1999.x - param.p1999.ppb, param.p1999.y + param.p1999.ppp, param.p1999.x - param.p1999.ppb, param.p1999.y - param.p1999.height*param.p1999.sfY - param.p1999.ppp);
   line(param.p1999.x - param.p1999.ppb, param.p1999.y + param.p1999.ppp, param.p1999.x + param.p1999.width*param.p1999.sfX + param.p1999.ppb, param.p1999.y + param.p1999.ppp);
@@ -506,17 +506,26 @@ function setup(){
   }
   for (let i = 0; i < 7; i++) {
     line(param.p1999.x + param.p1999.ppb * 4 * (i), param.p1999.y + param.p1999.ppp, param.p1999.x + param.p1999.ppb * 4 * (i), param.p1999.y + param.p1999.ppp + 10);
-    text(`${i + 1}`, param.p1999.x + param.p1999.ppb * 4 * (i) - 8, param.p1999.y + param.p1999.ppp + 40);
+    text(`${612 + i}`, param.p1999.x + param.p1999.ppb * 4 * (i) - 22, param.p1999.y + param.p1999.ppp + 40);
     line(param.p2322.x + param.p2322.ppb * 4 * (i), param.p2322.y + param.p2322.ppp, param.p2322.x + param.p2322.ppb * 4 * (i), param.p2322.y + param.p2322.ppp + 10);
-    text(`${i + 1}`, param.p2322.x + param.p2322.ppb * 4 * (i) - 8, param.p2322.y + param.p2322.ppp + 40)
+    text(`${468 + i}`, param.p2322.x + param.p2322.ppb * 4 * (i) - 22, param.p2322.y + param.p2322.ppp + 40)
   }
-  textSize(28)
-  text("Pitch (MPN)", param.p1999.x - param.p1999.ppb - 45, param.p1999.y - param.p1999.ppp * 30);
-  text("Pitch (MPN)", param.p2322.x - param.p2322.ppb - 45, param.p2322.y - param.p2322.ppp * 30);
-  text("Onset (Beat)", param.p1999.x + param.p1999.width*param.p1999.sfX + param.p1999.ppb * 2, param.p1999.y + param.p1999.ppb);
-  text("Onset (Beat)", param.p2322.x + param.p2322.width*param.p2322.sfX + param.p2322.ppb * 2, param.p2322.y + param.p2322.ppb);
-  
-  
+  textSize(36)
+  push()
+  translate(param.p1999.x - param.p1999.ppb - 75, param.p1999.y - 350)
+  rotate( 3*Math.PI/2 )
+  text("Pitch (MPN)", 0, 0)
+  pop()
+  push()
+  translate(param.p2322.x - param.p2322.ppb - 75, param.p2322.y - 350)
+  rotate( 3*Math.PI/2 )
+  text("Pitch (MPN)", 0, 0)
+  pop()
+
+  text("Ontime (Crotchet Beats)", param.p1999.x + param.p1999.width*param.p1999.sfX/2 - 200, param.p1999.y + param.p1999.ppb + 75);
+  text("Ontime (Crotchet Beats)", param.p2322.x + param.p2322.width*param.p2322.sfX/2 - 200, param.p2322.y + param.p2322.ppb + 75);
+
+
   // Draw arrows in one colour if there is a match, and in a different colour if there is not.
   p2322.idxIn1999 = p2322.pointSet.map(function(p){
     const pTrans = mu.subtract_two_arrays(p, transVec)
@@ -526,7 +535,7 @@ function setup(){
     })
     return relIdx
   })
-  
+
   p2322.idxIn1999.forEach(function(idx, jdx){
   	if (idx >= 0){
     	stroke(0, 50)
@@ -538,11 +547,26 @@ function setup(){
     else {
     	stroke(0, 5)
     }
-    
+
   })
-  
+
+  // Plot p1999.
+  fill(200)
+  p1999.pixelSet.forEach(function(p){
+    ellipse(p[0], p[1], 10, 10)
+  })
+  // rect(240, 760, 1000, 1000)
+
+
+  // Plot p2322.
+  p2322.pixelSet.forEach(function(p){
+    ellipse(p[0], p[1], 10, 10)
+  })
+
+
+
   // console.log("p2322:", p2322)
-  
+
   if (exportPng){
     saveCanvas(c, 'myCanvas', 'png')
   }
@@ -580,7 +604,7 @@ function setup(){
 //   this.headHeight = 7
 //   this.xdir = Math.sign(this.x2 - this.x1)
 //   this.ydir = Math.sign(this.y2 - this.y1)
-  
+
 //   this.draw = function(){
 //     fill(0)
 //     line(this.x1, this.y1, this.x2, this.y2)
@@ -600,5 +624,3 @@ function setup(){
 //     }
 //   }
 // }
-
-
