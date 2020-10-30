@@ -174,7 +174,7 @@ tiFiles.forEach(function (tiFile, tiFIdx) {
             let overlap = wo.overlap
             let lastOntime = points[points.length - 1][0]
 
-            while (ontimeInSrc < lastOntime) {
+            while (ontimeInSrc <= lastOntime - win) {
                 let obj = {
                     "ontimeInSrc": ontimeInSrc,
                     "points": mu.points_belonging_to_interval(points, ontimeInSrc, ontimeInSrc + win),
@@ -192,7 +192,7 @@ tiFiles.forEach(function (tiFile, tiFIdx) {
         let overlap = wo.overlap
         let lastOntime = tiPoints[tiPoints.length - 1][0]
         let maxSimilarities = []
-        while (ontimeInGen < lastOntime) {
+        while (ontimeInGen <= lastOntime - win) {
             console.log("ontimeInGen:", ontimeInGen)
             console.log("lastOntime:", lastOntime)
             genSegmentOntimes.push(ontimeInGen)
