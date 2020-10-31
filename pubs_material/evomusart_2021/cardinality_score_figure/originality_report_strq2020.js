@@ -3,33 +3,18 @@
 // Requires.
 const path = require("path")
 const fs = require("fs")
-const uu = require("uuid/v4")
+// const uu = require("uuid/v4")
 const {Midi} = require('@tonejs/midi')
 const mu = require("maia-util")
-const an = require("./analyze")
-const plotlib = require('nodeplotlib')
+// const an = require("./analyze")
+// const plotlib = require('nodeplotlib')
 
 // Parameters
-// Individual user paths
 const mainPaths = {
-    "tom": {
-        "midi": "/Users/tomthecollins/Shizz/York/Students/PhD/Alex\ \(Zongyu\)\ Yin/listening\ study/string\ quartets/data/",
-        "midiDirs": ["midi"],
-        "testItems": __dirname + "/out/strq2020_triple/",
-        // "testItem": "/Users/tomthecollins/Shizz/York/Students/PhD/Alex\ \(Zongyu\)\ Yin/listening\ study/new_magenta_quartet_examples/20200820-002703.mid",
-        "outputDir": __dirname + "/originality_reports/",
-        // "outputFileName": "um"
-    },
-    "alex": {
-        "midi": path.join(__dirname, "original"),
-        "midiDirs": ["midi"],
-        "testItems": path.join(__dirname, "candidates", "midi"),
-        "outputDir": path.join(__dirname, "originality_reports"),
-        // "outputFileName": "um"
-    },
-    "anotherUser": {
-        // ...
-    }
+    "midi": path.join(__dirname, "original"),
+    "midiDirs": [],
+    "testItems": "maia_markov",
+    "outputDir": path.join(__dirname, "results"),
 }
 // const targetChannel = 0 // Analyzing all channels here.
 const windowOverlapSizes = [
@@ -39,23 +24,31 @@ const windowOverlapSizes = [
 ]
 
 // Grab user name from command line to set path to data.
-let nextU = false
-let mainPath
-process.argv.forEach(function (arg, ind) {
-    if (arg === "-u") {
-        nextU = true
-    } else if (nextU) {
-        mainPath = mainPaths[arg]
-        nextU = false
+let nextDirs = false
+let nextItems = false
+let mainPath = mainPaths
+process.argv.forEach(function (arg) {
+    if (arg === "-midiDirs") {
+        nextItems = false
+        nextDirs = true
+    } else if (nextDirs && !(arg === "-testItems")) {
+        mainPath["midiDirs"].push(arg)
+    }
+    if (arg === "-testItems") {
+        nextDirs = false
+        nextItems = true
+    } else if (nextItems && !(arg === "-midiDirs")) {
+        mainPath["testItems"] = arg
+        nextItems = true
     }
 })
-// fs.mkdir(outdir)
+// fs.mkdir(outputDir)
 
 
 // Import and the MIDI files that act as the comparison set.
 let pointSets = []
 let midiDirs = fs.readdirSync(mainPath["midi"])
-console.log("midiDirs:", midiDirs)
+// console.log("midiDirs:", midiDirs)
 midiDirs = midiDirs.filter(function (midiDir) {
     return mainPath["midiDirs"].indexOf(midiDir) >= 0
 })
@@ -64,27 +57,27 @@ midiDirs.forEach(function (midiDir, jDir) {
     console.log("Working on midiDir:", midiDir, "jDir:", jDir)
     let pFiles = fs.readdirSync(path.join(mainPath["midi"], midiDir))
     pFiles = pFiles.filter(function (pFile) {
-        return pFile.split(".")[1] == "mid"
+        return pFile.split(".")[1] === "mid"
         // && pFile.split(".")[0] == "2327"
     })
     console.log("pFiles.length:", pFiles.length)
 
     pFiles.forEach(function (pFile, iFile) {
         // console.log("pFile:", pFile)
-        if (iFile % 10 == 0) {
-            // console.log("!!! PFILE " + (iFile + 1) + " OF " + pFiles.length + " !!!")
-        }
+        // if (iFile % 10 === 0) {
+        //     console.log("!!! PFILE " + (iFile + 1) + " OF " + pFiles.length + " !!!")
+        // }
         try {
             const midiData = fs.readFileSync(path.join(mainPath["midi"], midiDir, pFile))
             const midi = new Midi(midiData)
-            const timeSigs = [midi.header.timeSignatures.map(function (ts) {
-                return {
-                    "barNo": ts.measures + 1,
-                    "topNo": ts.timeSignature[0],
-                    "bottomNo": ts.timeSignature[1],
-                    "ontime": ts.ticks / midi.header.ppq
-                }
-            })[0]] // SUPER HACKY. REVISE LATER!
+            // const timeSigs = [midi.header.timeSignatures.map(function (ts) {
+            //     return {
+            //         "barNo": ts.measures + 1,
+            //         "topNo": ts.timeSignature[0],
+            //         "bottomNo": ts.timeSignature[1],
+            //         "ontime": ts.ticks / midi.header.ppq
+            //     }
+            // })[0]] // SUPER HACKY. REVISE LATER!
             // console.log("timeSigs:", timeSigs)
             let points = []
             midi.tracks.forEach(function (track) {
@@ -128,15 +121,37 @@ midiDirs.forEach(function (midiDir, jDir) {
 
 
 // Load the test items.
-let tiFiles = fs.readdirSync(mainPath["testItems"])
+let tiFiles = fs.readdirSync(path.join(__dirname, "candidates", mainPath["testItems"]))
 tiFiles = tiFiles.filter(function (tiFile) {
     return tiFile.split(".")[1] === "mid" || tiFile.split(".")[1] === "midi"
     // && pFile.split(".")[0] == "2327"
 })
+let segs = {}
+windowOverlapSizes.forEach(function (wo) {
+    let win = wo.winSize
+    let overlap = wo.overlap
+    segs[`${win}-${overlap}`] = []
+    // pointSets.slice(0, 5).forEach(function(c){
+    pointSets.forEach(function (c) {
+        const points = c.points
+        // const points = mu.comp_obj2note_point_set(c)
+        let ontimeInSrc = 0
+        let lastOntime = points[points.length - 1][0]
+        while (ontimeInSrc <= lastOntime - win) {
+            let obj = {
+                "pieceId": c.id,
+                "ontimeInSrc": ontimeInSrc,
+                "points": mu.points_belonging_to_interval(points, ontimeInSrc, ontimeInSrc + win)
+            }
+            segs[`${win}-${overlap}`].push(obj)
+            ontimeInSrc += overlap
+        }
+    })
+})
 console.log("tiFiles.length:", tiFiles.length)
 tiFiles.forEach(function (tiFile, tiFIdx) {
     // console.log("Working on " + tiFile.split(".")[0] + ", test item " + (tiFIdx + 1) + " of " + tiFiles.length + ".")
-    const tiMidiData = fs.readFileSync(path.join(mainPath["testItems"], tiFile))
+    const tiMidiData = fs.readFileSync(path.join(__dirname, "candidates", mainPath["testItems"], `${tiFile}`))
     const tiMidi = new Midi(tiMidiData)
     let tiPoints = []
     tiMidi.tracks.forEach(function (track) {
@@ -164,38 +179,37 @@ tiFiles.forEach(function (tiFile, tiFIdx) {
     // Compute similarities to the comparison set.
     let results = {}
     windowOverlapSizes.forEach(function (wo) {
-        let segs = []
+        // let segs = []
         // pointSets.slice(0, 5).forEach(function(c){
-        pointSets.forEach(function (c) {
-            const points = c.points
-            // const points = mu.comp_obj2note_point_set(c)
-            let ontimeInSrc = 0
-            let win = wo.winSize
-            let overlap = wo.overlap
-            let lastOntime = points[points.length - 1][0]
-
-            while (ontimeInSrc <= lastOntime - win) {
-                let obj = {
-                    "ontimeInSrc": ontimeInSrc,
-                    "points": mu.points_belonging_to_interval(points, ontimeInSrc, ontimeInSrc + win),
-                    "pieceId": c.id
-                }
-                segs.push(obj)
-                ontimeInSrc += overlap
-            }
-        })
+        // pointSets.forEach(function (c) {
+        //     const points = c.points
+        //     // const points = mu.comp_obj2note_point_set(c)
+        //     let ontimeInSrc = 0
+        //     let win = wo.winSize
+        //     let overlap = wo.overlap
+        //     let lastOntime = points[points.length - 1][0]
+        //
+        //     while (ontimeInSrc <= lastOntime - win) {
+        //         let obj = {
+        //             "pieceId": c.id,
+        //             "ontimeInSrc": ontimeInSrc,
+        //             "points": mu.points_belonging_to_interval(points, ontimeInSrc, ontimeInSrc + win)
+        //         }
+        //         segs.push(obj)
+        //         ontimeInSrc += overlap
+        //     }
+        // })
         // console.log("segs.length:", segs.length)
 
         let ontimeInGen = 0
-        let genSegmentOntimes = []
+        // let genSegmentOntimes = []
         let win = wo.winSize
         let overlap = wo.overlap
         let lastOntime = tiPoints[tiPoints.length - 1][0]
         let maxSimilarities = []
         while (ontimeInGen <= lastOntime - win) {
-            console.log("ontimeInGen:", ontimeInGen)
-            console.log("lastOntime:", lastOntime)
-            genSegmentOntimes.push(ontimeInGen)
+            console.log(`ontimeInGen: ${ontimeInGen} + ${win} / ${lastOntime} ... FileIndex: ${tiFIdx + 1} / ${tiFiles.length}`)
+            // genSegmentOntimes.push(ontimeInGen)
             let obj = {
                 "ontimeInGen": ontimeInGen,
                 "maxSimilarity": null,
@@ -206,10 +220,10 @@ tiFiles.forEach(function (tiFile, tiFIdx) {
             // console.log("tiPointsSegment:", tiPointsSegment)
 
             // Calculate the similarities.
-            let src = segs.map(function (seg) {
+            let src = segs[`${win}-${overlap}`].map(function (seg) {
                 return seg.pieceId
             })
-            let cardScores = segs.map(function (seg) {
+            let cardScores = segs[`${win}-${overlap}`].map(function (seg) {
                 let cs = 0
                 if (seg.points.length > 0 && tiPointsSegment.length > 0) {
                     const a = mu.unique_rows(
@@ -229,12 +243,12 @@ tiFiles.forEach(function (tiFile, tiFIdx) {
             const ma = mu.max_argmax(cardScores)
             obj.maxSimilarity = ma[0]
             obj.maxPieceId = src[ma[1]]
-            obj.maxPoints = segs[ma[1]]
+            obj.maxPoints = segs[`${win}-${overlap}`][ma[1]]
             maxSimilarities.push(obj)
 
             ontimeInGen += overlap
         }
-        console.log("maxSimilarities:", maxSimilarities)
+        // console.log("maxSimilarities:", maxSimilarities)
         console.log(
             "mu.mean():",
             mu.mean(maxSimilarities.map(function (ms) {
@@ -250,23 +264,23 @@ tiFiles.forEach(function (tiFile, tiFIdx) {
         // )
 
         // Plot it.
-        let data = [{
-            "x": genSegmentOntimes,
-            "y": maxSimilarities.map(function (ms) {
-                return ms.maxSimilarity
-            }),
-            "type": "line",
-        }]
-        const layout = {
-            "yaxis": {"range": [0, 1]},
-            "title": {"text": tiFile}
-        }
+        // let data = [{
+        //     "x": genSegmentOntimes,
+        //     "y": maxSimilarities.map(function (ms) {
+        //         return ms.maxSimilarity
+        //     }),
+        //     "type": "line",
+        // }]
+        // const layout = {
+        //     "yaxis": {"range": [0, 1]},
+        //     "title": {"text": tiFile}
+        // }
 
         // console.log("data[0]:", data[0])
         // plotlib.stack(data, layout)
         results[`wo-${wo.winSize}-${wo.overlap}`] = {"maxSimilarities": maxSimilarities}
     }); // windowOverlapSizes.forEach()
-    fs.writeFileSync(`./results/${tiFile.split(".")[0]}.json`, JSON.stringify(results));
+    fs.writeFileSync(path.join(mainPath["outputDir"], `${tiFile.split(".")[0]}.json`), JSON.stringify(results));
 }) // tiFiles.forEach(
 
 // plotlib.plot()
