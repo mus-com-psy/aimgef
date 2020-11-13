@@ -20,10 +20,10 @@ const mainPaths = {
 const windowOverlapSizes = [
     {"winSize": 16, "overlap": 8},
     {"winSize": 8, "overlap": 4},
-    {"winSize": 4, "overlap": 2}
+    // {"winSize": 4, "overlap": 2}
 ]
 
-// Grab user name from command line to set path to data.
+// Grab command line args to set path to data.
 let nextDirs = false
 let nextItems = false
 let mainPath = mainPaths
