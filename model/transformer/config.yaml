@@ -1,0 +1,18 @@
+---
+Transformer:
+  epoch: 20
+  batch_size: 2
+  n_layer: 6
+  n_head: 8
+  d_model: 512
+  d_head: 64
+  d_inner: 2048
+  dropout: 0.1
+  CSQ:
+    vocab_size: 270
+    seq_len: 2048
+  CPI:
+    vocab_size: 389
+    seq_len: 2048
+
+...
