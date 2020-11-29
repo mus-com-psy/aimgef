@@ -12,7 +12,7 @@ node_modules/
 *.wav
 
 # Images
-*.png
+#*.png
 
 # Documents
 *.pdf
