@@ -3,28 +3,28 @@ const exportPng = true
 // let tokens = "NOTE_ON<63>, NOTE_ON<68>, TIME_SHIFT<1/16>, NOTE_OFF<68>, NOTE_ON<70>, TIME_SHIFT<1/16>, NOTE_OFF<70>, NOTE_ON<72>, TIME_SHIFT<1/16>, NOTE_OFF<72>, NOTE_ON<70>, TIME_SHIFT<1/16>, NOTE_OFF<63>, NOTE_OFF<70>, NOTE_ON<66>, NOTE_ON<69>, TIME_SHIFT<1/16>, NOTE_OFF<69>, NOTE_ON<71>, TIME_SHIFT<1/16>, NOTE_OFF<66>, NOTE_OFF<71>, NOTE_ON<64>, NOTE_ON<73>, TIME_SHIFT<1/16>, NOTE_OFF<64>, NOTE_OFF<73>, TIME_SHIFT<1/16>, NOTE_ON<62>, NOTE_ON<71>, TIME_SHIFT<1/16>, NOTE_OFF<62>, NOTE_OFF<71>"
 let tokens = "NOTE_ON<66>,\nNOTE_ON<74>,\nTIME_SHIFT<1/16>,\nNOTE_OFF<74>,\nNOTE_ON<78>,\nTIME_SHIFT<1/16>,\nNOTE_OFF<78>,\nNOTE_ON<81>,\nTIME_SHIFT<1/16>,\nNOTE_OFF<81>,\n...\nNOTE_ON<64>,\nNOTE_ON<79>,\nTIME_SHIFT<1/16>,\nNOTE_OFF<64>,\nNOTE_OFF<79>"
 let notes = "[\n" +
-    "\t{ ontime: 0,\tMNN: 66,\tMPN: 63,\tduration: 1/4 },\n" +
-    "\t{ ontime: 0,\tMNN: 74,\tMPN: 68,\tduration: 1/16 },\n" +
-    "\t{ ontime: 1/4,\tMNN: 78,\tMPN: 70,\tduration: 1/16 },\n" +
-    "\t{ ontime: 1/2,\tMNN: 81,\tMPN: 72,\tduration: 1/16 },\n" +
-    "\t{ ontime: 3/4,\tMNN: 78,\tMPN: 70,\tduration: 1/16 },\n" +
-    "\t{ ontime: 1,\tMNN: 71,\tMPN: 66,\tduration: 1/8 },\n" +
-    "\t{ ontime: 1,\tMNN: 76,\tMPN: 69,\tduration: 1/16 },\n" +
-    "\t{ ontime: 5/4,\tMNN: 79,\tMPN: 71,\tduration: 1/16 },\n" +
-    "\t{ ontime: 3/2,\tMNN: 67,\tMPN: 64,\tduration: 1/16 },\n" +
-    "\t{ ontime: 3/2,\tMNN: 83,\tMPN: 73,\tduration: 1/16 },\n" +
-    "\t{ ontime: 7/4,\tMNN: 64,\tMPN: 62,\tduration: 1/16 },\n" +
-    "\t{ ontime: 7/4,\tMNN: 79,\tMPN: 71,\tduration: 1/16 },\n" +
+    "\t{ ontime: 468,\tMNN: 66,\tMPN: 63,\tduration: 1/4 },\n" +
+    "\t{ ontime: 468,\tMNN: 74,\tMPN: 68,\tduration: 1/16 },\n" +
+    "\t{ ontime: 468.25,\tMNN: 78,\tMPN: 70,\tduration: 1/16 },\n" +
+    "\t{ ontime: 468.5,\tMNN: 81,\tMPN: 72,\tduration: 1/16 },\n" +
+    "\t{ ontime: 468.75,\tMNN: 78,\tMPN: 70,\tduration: 1/16 },\n" +
+    "\t{ ontime: 469,\tMNN: 71,\tMPN: 66,\tduration: 1/8 },\n" +
+    "\t{ ontime: 469,\tMNN: 76,\tMPN: 69,\tduration: 1/16 },\n" +
+    "\t{ ontime: 469.25,\tMNN: 79,\tMPN: 71,\tduration: 1/16 },\n" +
+    "\t{ ontime: 469.5,\tMNN: 67,\tMPN: 64,\tduration: 1/16 },\n" +
+    "\t{ ontime: 469.5,\tMNN: 83,\tMPN: 73,\tduration: 1/16 },\n" +
+    "\t{ ontime: 469.75,\tMNN: 64,\tMPN: 62,\tduration: 1/16 },\n" +
+    "\t{ ontime: 469.75,\tMNN: 79,\tMPN: 71,\tduration: 1/16 },\n" +
     "]"
 let maia = "[\n" +
     "\t{ state: [1, [-8, 0]], context: {...} },\n" +
-    "\t{ state: [2, [-8, 4]], context: {...} },\n" +
-    "\t{ state: [3, [-8, 7]], context: {...} },\n" +
-    "\t{ state: [4, [-8, 4]], context: {...} },\n" +
-    "\t{ state: [1, [-3, 2]], context: {...} },\n" +
-    "\t{ state: [2, [-8, 5]], context: {...} },\n" +
-    "\t{ state: [3, [-7, 9]], context: {...} },\n" +
-    "\t{ state: [4, [-10, 5]], context: {...} },\n" +
+    "\t{ state: [1.25, [-8, 4]], context: {...} },\n" +
+    "\t{ state: [1.5, [-8, 7]], context: {...} },\n" +
+    "\t{ state: [1.75, [-8, 4]], context: {...} },\n" +
+    "\t{ state: [2, [-3, 2]], context: {...} },\n" +
+    "\t{ state: [2.25, [-8, 5]], context: {...} },\n" +
+    "\t{ state: [2.5, [-7, 9]], context: {...} },\n" +
+    "\t{ state: [2.75, [-10, 5]], context: {...} },\n" +
     "]"
 // Point sets to plot.
 let p2322 = {
@@ -172,11 +172,16 @@ function setup() {
     for (let i = 0; i < 9; i++) {
         line(param.p2322.x + param.p2322.ppb * 0.0625 * i, param.p2322.y + param.p2322.ppp, param.p2322.x + param.p2322.ppb * 0.0625 * i, param.p2322.y - param.p2322.height);
     }
-    for (let i = 0; i < 4; i++) {
-        text(`${468}.${i % 4 + 1}`, param.p2322.x + param.p2322.ppb * 0.0625 * i - 50, param.p2322.y + param.p2322.ppp + 40);
-    }
-    for (let i = 4; i < 8; i++) {
-        text(`${469}.${i % 4 + 1}`, param.p2322.x + param.p2322.ppb * 0.0625 * i - 50, param.p2322.y + param.p2322.ppp + 40);
+    let bar_beat;
+    for (let i = 0; i < 8; i++) {
+        bar_beat = `${468 + i / 4}`
+        if (bar_beat.length == 6) {
+            text(bar_beat, param.p2322.x + param.p2322.ppb * 0.0625 * i - 80, param.p2322.y + param.p2322.ppp + 40);
+        } else if (bar_beat.length == 5) {
+            text(bar_beat, param.p2322.x + param.p2322.ppb * 0.0625 * i - 60, param.p2322.y + param.p2322.ppp + 40);
+        } else {
+            text(bar_beat, param.p2322.x + param.p2322.ppb * 0.0625 * i - 40, param.p2322.y + param.p2322.ppp + 40);
+        }
     }
 
     tokens = tokens.split(', ');
