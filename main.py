@@ -1,6 +1,6 @@
 import argparse
-
-from trainer import Trainer
+from model.trainer import Trainer
+import model.utilities.crawler as crawler
 
 
 def main(args):
@@ -18,13 +18,15 @@ def main(args):
         for i in range(10):
             trainer = Trainer(model_name=args.model, style=args.style, resume=(args.src, i))
             trainer.predict(args.model, args.style, 1024, durations, start_index=i * 30)
+    elif args.mode == 'CSQ_DATA':
+        crawler.main()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, choices=['VAE', 'Transformer'], required=True)
-    parser.add_argument('--style', type=str, choices=['CSQ', 'CPI'], required=True)
-    parser.add_argument('--mode', type=str, choices=['TRAIN', 'PREDICT', 'ORI', 'GEN'], required=True)
+    parser.add_argument('--model', type=str, choices=['VAE', 'Transformer'])
+    parser.add_argument('--style', type=str, choices=['CSQ', 'CPI'])
+    parser.add_argument('--mode', type=str, choices=['TRAIN', 'PREDICT', 'ORI', 'GEN', 'CSQ_DATA'])
     parser.add_argument('--src', type=str)
     parser.add_argument('--epoch', type=int)
     arguments = parser.parse_args()

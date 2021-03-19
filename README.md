@@ -1,9 +1,10 @@
 # aimgef
 Artificial Intelligence Music Generation Evaluation Framework
 
-## Construct dataset for Transformer training
-`cd ./model/`
+## Get Classical string quartets from KernScore
+`python main.py --mode CSQ_DATA`
 
+## Construct dataset for Transformer training
 `python ./transformer/preprocessor.py`
 
 ## Train Transformer
