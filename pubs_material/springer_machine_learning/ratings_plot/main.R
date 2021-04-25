@@ -18,11 +18,12 @@ library("ggpubr")
 # cpi <- read.csv("cpi.csv")
 p <- read.csv("all.csv")
 p$Category <- factor(p$Category, levels = c("LiTr", "BeAf", "CoRe", "MaMa", "MVAE", "MuTr", "Orig"))
-p <- ggviolin(p, x = "Category", y = "Rating", orientation = "horiz", add = "median_q1q3")
+p <- ggviolin(p, x = "Category", y = "Rating", orientation = "horiz")
+p <- add_summary(p, fun = "median_q1q3", size = 0.3)
 p <- facet(p +
              theme_pubclean() +
              geom_hline(yintercept = 2, linetype = "dotted", size = 0.5, alpha = 0.4) +
-             geom_hline(yintercept = 4, linetype = "dotted", size = 0.5) +
+             geom_hline(yintercept = 4, linetype = "dotted", size = 0.5, alpha = 0.8) +
              geom_hline(yintercept = 6, linetype = "dotted", size = 0.5, alpha = 0.4) +
              scale_y_discrete(limits = c("1", "2", "3", "4", "5", "6", "7")),
            scales = "free",
@@ -30,4 +31,4 @@ p <- facet(p +
            facet.by = c("Part", "Aspect"))
 p
 ggarrange(p) %>%
-  ggexport(width = 3200, height = 2000, res = 300, filename = "ratings.png")
+  ggexport(width = 3200, height = 2000, res = 400, filename = "ratings.png")
