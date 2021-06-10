@@ -1,14 +1,19 @@
 const path = require("path")
 const fs = require("fs")
-const Hasher = require("./Hasher")
+const Map = require("./map")
 const mu = require("maia-util")
 const mm = require("maia-markov")
+const sqlite3 = require("sqlite3")
 const {Midi} = require('@tonejs/midi')
 
+
 const dir = path.join(__dirname, "original", "validation")
+let map = new Map("./out/lookup.db")
+build(map, dir)
 // let h = new Hasher("./out/lookup_train.json")
-let h = new Hasher()
-let b = build(h, dir)
+// let h = new Hasher()
+// let b = build(h, dir)
+
 // let tiFiles = fs.readdirSync(dir)
 // tiFiles = tiFiles.filter(function (tiFile) {
 //     return tiFile.split(".")[1] === "mid" || tiFile.split(".")[1] === "midi"
@@ -88,24 +93,16 @@ function getPoints(filename, mode = "mm") {
     return points
 }
 
-function build(h, dir, mode="triples") {
-    // Flat approach
+function build(map, dir, mode = "triples") {
     const filenames = fs.readdirSync(dir)
-        .filter(function (fnam) {
-            return /\.mid$/.test(fnam)
+        .filter(function (filename) {
+            return /\.mid$/.test(filename)
         })
-    // Recursive approach
-    // const filenames = []
-    // fromDir(dir, /\.xml$/, function(filename){
-    //   filenames.push(filename)
-    // })
     console.log("filenames", filenames)
-    // const cumuTimes = []
-    // let cumuTime = 0
-    filenames.forEach(function (fname) {
-        console.log("-- Hashing ", fname)
+    filenames.forEach(function (filename) {
+        console.log("-- Hashing ", filename)
         const co = new mm.MidiImport(
-            path.join(dir, fname)
+            path.join(dir, filename)
         ).compObj
         // Count up the staffNos and filter on the one that is most numerous.
         let staffNos = []
@@ -123,18 +120,14 @@ function build(h, dir, mode="triples") {
             }
 
         })
-        console.log("staffNos:", staffNos)
+        // console.log("staffNos:", staffNos)
         const points = co.notes.map(n => {
             return [n.ontime, n.MNN]
         })
-        h.create_hash_entries(points, path.basename(fname), mode)
-        // cumuTimes.push(cumuTime)
-        // cumuTime += Math.ceil(points.slice(-1)[0][0] + 50)
+        map.create_hash_entries(points, path.basename(filename), mode)
     })
     fs.writeFileSync(
         path.join(__dirname, "out", "lookup.json"),
         JSON.stringify(h.map)
     )
-    // return {"filenames": filenames, "cumuTimes": cumuTimes}
-    return h.map
 }

@@ -1,25 +1,26 @@
 const mu = require("maia-util")
+const sqlite3 = require("sqlite3");
 
-class Hasher {
-    constructor(_mapPath) {
-        if (_mapPath !== undefined) {
-            this.map = require(_mapPath)
-        } else {
-            this.map = {}
-        }
+class Map {
+    constructor(db, mode="triples") {
+        this.db = new sqlite3.Database(db, (err) => {
+            if (err) {
+                console.error(err.message);
+            }
+            console.log(`Connected to => lookup db => model: ${mode}.`);
+        });
+        this.mode = mode
+        this.db.run(`CREATE TABLE ${mode} (entry TEXT, filename TEXT, onset TEXT)`)
     }
 
-
-    contains(aKey) {
-        return this.map[aKey]
+    contains(key) {
+        this.db.all(`SELECT * FROM ${this.mode} WHERE entry = \"${key}\"`, (err, rows) => {
+            return rows
+        })
     }
 
-
-    // The expected format is with time in the first dimension and pitch in the
-    // second dimension of pts. It is assumed that pts is sorted
-    // lexicographically.
     create_hash_entries(
-        pts, fname, mode = "duples",
+        pts, filename, mode = "triples",
         tMin = 0.1, tMax = 10, pMin = 1, pMax = 12
     ) {
         const npts = pts.length
@@ -61,7 +62,6 @@ class Hasher {
                         const v1 = pts[j]
                         const td1 = v1[0] - v0[0]
                         const apd1 = Math.abs(v1[1] - v0[1])
-                        // console.log("i:", i, "j:", j)
                         // Decide whether to proceed to v1 and v2.
                         if (td1 > tMin && td1 < tMax && apd1 >= pMin && apd1 <= pMax) {
                             let k = j + 1
@@ -69,12 +69,12 @@ class Hasher {
                                 const v2 = pts[k]
                                 const td2 = v2[0] - v1[0]
                                 const apd2 = Math.abs(v2[1] - v1[1])
-                                // console.log("j:", j, "k:", k)
                                 // Decide whether to make a hash entry.
                                 if (td2 > tMin && td2 < tMax && apd2 >= pMin && apd2 <= pMax) {
                                     // Make a hash entry, something like "±pd1±pd2tdr"
                                     const he = this.create_hash_entry(
-                                        [v1[1] - v0[1], v2[1] - v1[1], td1, td2], mode, v0[0], fname, tMin, tMax
+                                        [v1[1] - v0[1], v2[1] - v1[1], td1, td2],
+                                        mode, v0[0], filename, tMin, tMax
                                     )
                                     this.insert(he)
                                     nh++
@@ -99,7 +99,7 @@ class Hasher {
     }
 
 
-    create_hash_entry(vals, mode, ctime, fname, tMin, tMax) {
+    create_hash_entry(vals, mode, onset, filename, tMin, tMax) {
         let str = "", isInteger
         switch (mode) {
             case "duples":
@@ -165,8 +165,8 @@ class Hasher {
         }
         return {
             "hash": str,
-            "ctime": ctime,
-            "fname": fname
+            "onset": onset,
+            "filename": filename
         }
     }
 
@@ -275,21 +275,14 @@ class Hasher {
     }
 
 
-    insert(hashEntry) {
-        const key = hashEntry.hash
-        const fname = hashEntry.fname
-        const ctime = hashEntry.ctime
-        const lookup = this.contains(key)
-        if (lookup !== undefined) {
-            if (lookup[fname] !== undefined) {
-                lookup[fname].push(ctime)
-            } else {
-                lookup[fname] = [ctime]
-            }
-        } else {
-            this.map[key] = {}
-            this.map[key][fname] = [ctime]
-        }
+    insert(entry) {
+        const key = entry.hash
+        const filename = entry.filename
+        const onset = entry.onset
+        console.log(`\"${key}\", \"${filename}\", \"${onset}\"`)
+        this.db.run(
+            `INSERT INTO ${this.mode} (entry, filename, onset) VALUES (\"${key}\", \"${filename}\", \"${onset}\")`
+        )
     }
 
 
@@ -402,4 +395,4 @@ class Hasher {
 
 }
 
-module.exports = Hasher
+module.exports = Map
