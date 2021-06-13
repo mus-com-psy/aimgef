@@ -19,7 +19,7 @@ class Hasher {
     // second dimension of pts. It is assumed that pts is sorted
     // lexicographically.
     create_hash_entries(
-        pts, cumuTime, fnam, mode = "duples",
+        pts, fnam, mode = "duples",
         tMin = 0.1, tMax = 10, pMin = 1, pMax = 12
     ) {
         const npts = pts.length
@@ -41,7 +41,7 @@ class Hasher {
                             // Make a hash entry, something like "±pdtd"
                             const he = this.create_hash_entry(
                                 [v1[1] - v0[1], td], mode,
-                                cumuTime + v0[0], fnam,
+                                v0[0], fnam,
                                 tMin, tMax
                             )
                             this.insert(he)
@@ -176,8 +176,8 @@ class Hasher {
         }
         return {
             "hash": str,
-            "ctimes": [ctime],
-            "fnams": [fnam]
+            "ctimes": ctime,
+            "fnams": fnam
         }
     }
 
@@ -289,15 +289,21 @@ class Hasher {
 
 
     insert(hashEntry) {
-        const key = hashEntry.hash
-        delete hashEntry.hash
-        const lookup = this.contains(key)
+        const hash = hashEntry.hash
+        const ctimes = hashEntry.ctimes
+        const fnams = hashEntry.fnams
+
+        const lookup = this.contains(hash)
         if (lookup !== undefined) {
-            // Extend ctimes and fnams arrays.
-            lookup.ctimes.push(hashEntry.ctimes[0])
-            lookup.fnams.push(hashEntry.fnams[0])
+            if (lookup[fnams] !== undefined) {
+                lookup[fnams].push(ctimes)
+            } else {
+                lookup[fnams] = [ctimes]
+            }
+
         } else {
-            this.map[key] = hashEntry
+            this.map[hash] = {}
+            this.map[hash][fnams] = [ctimes]
         }
     }
 
@@ -310,6 +316,7 @@ class Hasher {
     ) {
         let tInDset = []
         let tInQuery = []
+        let results = {}
         const npts = pts.length
         // console.log("npts:", npts)
         let nh = 0
@@ -334,11 +341,14 @@ class Hasher {
                             // Is there a match?
                             const lookup = this.contains(he.hash)
                             if (lookup !== undefined) {
-                                // There's a match!
-                                lookup.ctimes.forEach(function (ctime) {
-                                    tInDset.push(ctime)
-                                    tInQuery.push(he.ctimes[0])
-                                })
+                                for (const [key, value] of Object.entries(lookup)) {
+                                    if (results[key] === undefined) {
+                                        results[key] = []
+                                    }
+                                    value.forEach(function (ctime) {
+                                        results[key].push([he.ctimes, ctime])
+                                    })
+                                }
                             }
                             nh++
                         } // End whether to make a hash entry.
@@ -400,11 +410,14 @@ class Hasher {
             default:
                 console.log("Should not get to default in match_hash_entries() switch.")
         }
-
+        // return {
+        //     "nosHashes": nh,
+        //     "timesInDataset": tInDset,
+        //     "timesInQuery": tInQuery
+        // }
         return {
             "nosHashes": nh,
-            "timesInDataset": tInDset,
-            "timesInQuery": tInQuery
+            "results": results,
         }
     }
 
