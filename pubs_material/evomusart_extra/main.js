@@ -6,7 +6,7 @@ const {Midi} = require('@tonejs/midi')
 
 
 const dir = path.join(__dirname, "original", "train")
-const can = path.join(__dirname, "candidates", "transformer_train")
+const can = path.join(__dirname, "candidates", "transformer")
 let h = new Hasher("./out/lookup.json")
 // build(h, dir, "duples")
 
@@ -57,7 +57,7 @@ canFiles.forEach(function (file) {
         }
     })
     fs.writeFileSync(
-        path.join(__dirname, "out", "transformer", file.split(".")[0] + "json"),
+        path.join(__dirname, "out", "transformer", file.split(".")[0] + ".json"),
         JSON.stringify(out)
     )
 })
