@@ -6,7 +6,7 @@ const {Midi} = require('@tonejs/midi')
 
 
 const dir = path.join(__dirname, "original", "train")
-const can = path.join(__dirname, "candidates", "transformer")
+const can = path.join(__dirname, "candidates", "transformer_train")
 let h = new Hasher("./out/lookup.json")
 // build(h, dir, "duples")
 
@@ -21,46 +21,41 @@ canFiles = canFiles.filter(function (canFile) {
     return canFile.split(".")[1] === "mid" || canFile.split(".")[1] === "midi"
 })
 
-const windowOverlapSizes = [
-    {"winSize": 16, "overlap": 8},
-    // {"winSize": 8, "overlap": 4},
-    // {"winSize": 4, "overlap": 2}
-]
+const windowOverlapSizes = {"winSize": 16, "overlap": 8}
 
 
-canFiles.forEach(function (file) {
+for (const file of canFiles) {
     let out = {"nh": [], "ctimes": {}}
     tiFiles.forEach(function (file) {
         out.ctimes[file] = []
     })
     let points = getPoints(path.join(can, file), "mm")
-    windowOverlapSizes.forEach(function (wo) {
-        let win = wo.winSize
-        let overlap = wo.overlap
-        for (let i = 0; i < Math.floor((points[points.length - 1][0] - win) / (win - overlap)); i++) {
-            let sub = points.filter(p => {
-                return (i * (win - overlap)) <= p[0] && p[0] < (i * (win - overlap) + win)
-            })
-            let matches = h.match_hash_entries(sub)
-            out.nh.push(matches.nosHashes)
-            for (const [key, value] of Object.entries(matches.results)) {
-                out.ctimes[key].push(value)
-            }
-
-            // const hist = h.histogram(
-            //     matches,
-            //     cumulativeTimes,
-            //     pieceNames,
-            //     4000, "duples"
-            // )
-            // let b = 0
+    let win = windowOverlapSizes.winSize
+    let overlap = windowOverlapSizes.overlap
+    for (let i = 0; i < Math.floor((points[points.length - 1][0] - win) / (win - overlap)); i++) {
+        let sub = points.filter(p => {
+            return (i * (win - overlap)) <= p[0] && p[0] < (i * (win - overlap) + win)
+        })
+        let matches = h.match_hash_entries(sub)
+        out.nh.push(matches.nosHashes)
+        for (const [key, value] of Object.entries(matches.results)) {
+            out.ctimes[key].push(value)
         }
-    })
+
+        // const hist = h.histogram(
+        //     matches,
+        //     cumulativeTimes,
+        //     pieceNames,
+        //     4000, "duples"
+        // )
+        // let b = 0
+    }
+
     fs.writeFileSync(
         path.join(__dirname, "out", "transformer", file.split(".")[0] + ".json"),
         JSON.stringify(out)
     )
-})
+}
 //
 //
 // let filename = path.join(__dirname, "candidates", "transformer_train", "0.mid")
