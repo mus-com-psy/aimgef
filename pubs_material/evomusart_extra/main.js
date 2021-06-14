@@ -50,11 +50,27 @@ for (const file of canFiles) {
         // )
         // let b = 0
     }
+    fs.mkdir(`./out/results/${file.split(".")[0]}`, { recursive: true }, (err) => {
+        if (err) {
+            throw err
+        } else {
+            fs.writeFileSync(
+                `./out/results/${file.split(".")[0]}/nh.json`,
+                JSON.stringify(out.nh)
+            )
+            for (const [key, value] of Object.entries(out.ctimes)) {
+                fs.writeFileSync(
+                    `./out/results/${file.split(".")[0]}/${key}.json`,
+                    JSON.stringify(value)
+                )
+            }
+        }
+    });
 
-    fs.writeFileSync(
-        path.join(__dirname, "out", "transformer", file.split(".")[0] + ".json"),
-        JSON.stringify(out)
-    )
+    // fs.writeFileSync(
+    //     path.join(__dirname, "out", "transformer", file.split(".")[0] + ".json"),
+    //     JSON.stringify(out)
+    // )
 }
 //
 //
