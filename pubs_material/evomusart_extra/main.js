@@ -59,10 +59,15 @@ for (const file of canFiles) {
                 JSON.stringify(out.nh)
             )
             for (const [key, value] of Object.entries(out.ctimes)) {
-                fs.writeFileSync(
-                    `./out/results/${file.split(".")[0]}/${key}.json`,
-                    JSON.stringify(value)
-                )
+                let c = 0
+                for (const v of value) {
+                    fs.writeFileSync(
+                        `./out/results/${file.split(".")[0]}/${key}-${c}.json`,
+                        JSON.stringify(value)
+                    )
+                    c += 1
+                }
+
             }
         }
     });
