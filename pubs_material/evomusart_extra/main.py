@@ -1,4 +1,6 @@
 import json
+import glob
+import os
 
 
 def create_hash_entry(values, mode, ctime, filename, t_min, t_max):
@@ -13,7 +15,7 @@ def create_hash_entry(values, mode, ctime, filename, t_min, t_max):
             s += "-"
         if apd < 10:
             s += "0"
-        s += apd
+        s += str(apd)
         if values[1] >= t_max or values[1] < t_min:
             raise ValueError("Invalid time difference.")
         s += f'{values[1]:.1f}'
@@ -26,6 +28,8 @@ class Hasher:
         if load:
             with open(load) as json_file:
                 self.lookup = json.load(json_file)
+        else:
+            self.lookup = {}
 
     def contains(self, key):
         if key in self.lookup.keys():
@@ -37,14 +41,14 @@ class Hasher:
                             t_min=0.1, t_max=10, p_min=1, p_max=12):
         nh = 0
         if mode == "duple":
-            for i in range(len(pts)):
+            for i in range(len(pts) - 1):
                 v0 = pts[i]
                 j = i + 1
                 while j < len(pts):
                     v1 = pts[j]
                     td = v1[0] - v0[0]
                     apd = abs(v1[1] - v0[1])
-                    if t_min <= td <= t_max and p_min <= apd <= p_max:
+                    if t_min < td < t_max and p_min <= apd <= p_max:
                         he = create_hash_entry([v1[1] - v0[1], td], mode, v0[0], filename, t_min, t_max)
                         self.insert(he)
                         nh += 1
@@ -53,26 +57,25 @@ class Hasher:
                     j += 1
         return nh
 
-    def match_hash_entry(self, pts, filename, mode="duple", t_min=0.1, t_max=10, p_min=1, p_max=12):
+    def match_hash_entries(self, pts, filename, mode="duple", t_min=0.1, t_max=10, p_min=1, p_max=12):
         results = {}
         nh = 0
         if mode == "duple":
-            for i in range(len(pts)):
+            for i in range(len(pts) - 1):
                 v0 = pts[i]
                 j = i + 1
                 while j < len(pts):
                     v1 = pts[j]
                     td = v1[0] - v0[0]
                     apd = abs(v1[1] - v0[1])
-                    if t_min <= td <= t_max and p_min <= apd <= p_max:
+                    if t_min < td < t_max and p_min <= apd <= p_max:
                         he = create_hash_entry([v1[1] - v0[1], td], mode, v0[0], filename, t_min, t_max)
                         match = self.contains(he["hash"])
                         if match:
                             for key, value in match.items():
-                                if key in results.keys():
+                                if not (key in results.keys()):
                                     results[key] = []
-                                for v in value:
-                                    results[key].append([he["ctime"], v])
+                                results[key] += [[he["ctime"], v] for v in value]
                         nh += 1
                     if td >= t_max:
                         j = len(pts) - 1
@@ -92,7 +95,26 @@ class Hasher:
             self.lookup[key] = {filename: [ctime]}
 
 
+def build(hasher, path, mode="duple"):
+    for file in glob.glob(path + "/*.json"):
+        print(f'Hashing {file}')
+        with open(file) as json_file:
+            points = json.load(json_file)
+        hasher.create_hash_entries(points, os.path.basename(file).split(".")[0], mode)
+    with open("./out/lookup.json", "w") as fp:
+        json.dump(hasher.lookup, fp)
+
+
 if __name__ == '__main__':
     h = Hasher("./out/lookup.json")
+    # build(h, "./original/train")
+    ori_path = "./original/train"
+    can_path = "./candidates/transformer_train"
 
-    pass
+    for f in glob.glob(can_path + "/*.json"):
+        with open(f) as j_file:
+            point_set = json.load(j_file)
+        print(f'Matching {f} {len(point_set)}')
+        matches = h.match_hash_entries(point_set, "")
+        with open(f'./out/transformer/{os.path.basename(f).split(".")[0]}.json', "w") as fp:
+            json.dump(matches, fp)
