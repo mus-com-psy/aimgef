@@ -122,7 +122,7 @@ function getPoints(filename, mode = "mm") {
             })
             break
     }
-    return points
+    return points.slice(0, 400)
 }
 
 function build(h, dir, mode = "triples") {
