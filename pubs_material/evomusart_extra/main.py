@@ -109,12 +109,13 @@ if __name__ == '__main__':
     h = Hasher("./out/lookup.json")
     # build(h, "./original/train")
     ori_path = "./original/train"
-    can_path = "./candidates/transformer_train"
+    # can_path = "./candidates/transformer_train"
+    can_path = "./original/validation"
 
     for f in glob.glob(can_path + "/*.json"):
         with open(f) as j_file:
             point_set = json.load(j_file)
         print(f'Matching {f} {len(point_set)}')
         matches = h.match_hash_entries(point_set, "")
-        with open(f'./out/transformer/{os.path.basename(f).split(".")[0]}.json', "w") as fp:
+        with open(f'./out/baseline/{os.path.basename(f).split(".")[0]}.json', "w") as fp:
             json.dump(matches, fp)

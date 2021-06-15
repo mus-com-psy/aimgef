@@ -5,7 +5,7 @@ const {Midi} = require('@tonejs/midi')
 
 
 const ori_dir = path.join(__dirname, "original", "train")
-const can_dir = path.join(__dirname, "candidates", "transformer_train")
+const can_dir = path.join(__dirname, "original", "validation")
 
 let dirs = [ori_dir, can_dir]
 dirs.forEach(function (dir) {
