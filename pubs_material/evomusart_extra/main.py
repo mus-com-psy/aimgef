@@ -1,6 +1,7 @@
 import json
 import glob
 import os
+import errno
 
 
 def create_hash_entry(values, mode, ctime, filename, t_min, t_max):
@@ -116,6 +117,15 @@ if __name__ == '__main__':
         with open(f) as j_file:
             point_set = json.load(j_file)
         print(f'Matching {f} {len(point_set)}')
-        matches = h.match_hash_entries(point_set, "")
-        with open(f'./out/baseline/{os.path.basename(f).split(".")[0]}.json', "w") as fp:
-            json.dump(matches, fp)
+        for i in range(len(point_set) // 100):
+            matches = h.match_hash_entries(point_set[i*100:(i+1)*100], "")
+            fname = f'./out/baseline/{os.path.basename(f).split(".")[0]}/{i*100}-{(i+1)*100}.json'
+            if not os.path.exists(os.path.dirname(fname)):
+                try:
+                    os.makedirs(os.path.dirname(fname))
+                except OSError as exc:  # Guard against race condition
+                    if exc.errno != errno.EEXIST:
+                        raise
+            with open(fname, "w") as j_file:
+                json.dump(matches, j_file)
+                print(f'\t[DONE] {i*100}-{(i+1)*100}')
