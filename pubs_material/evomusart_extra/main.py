@@ -1,6 +1,7 @@
 import json
 import glob
 import os
+import pickle
 import errno
 
 
@@ -140,8 +141,18 @@ def check_similarity(can, ori):
                 match.extend(json.load(j_file)["results"][ori])
             except KeyError:
                 continue
-    print(len(match))
+    fname = f'./out/baseline/{can}/{ori}.pkl'
+    if not os.path.exists(os.path.dirname(fname)):
+        try:
+            os.makedirs(os.path.dirname(fname))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    with open(fname, "wb") as f:
+        pickle.dump(match, f)
 
 
 if __name__ == '__main__':
-    check_similarity("1211", "1207.mid")
+    for i in glob.glob('./original/validation/*.json'):
+        for j in glob.glob('./original/train/*.mid'):
+            check_similarity(os.path.basename(i).split(".")[0], os.path.basename(j))
