@@ -106,7 +106,7 @@ def build(hasher, path, mode="duple"):
         json.dump(hasher.lookup, fp)
 
 
-if __name__ == '__main__':
+def matching():
     h = Hasher("./out/lookup.json")
     # build(h, "./original/train")
     ori_path = "./original/train"
@@ -129,3 +129,15 @@ if __name__ == '__main__':
             with open(fname, "w") as j_file:
                 json.dump(matches, j_file)
                 print(f'\t[DONE] {i * 100}-{(i + 1) * 100}')
+
+
+def check_similarity(can, ori):
+    match = []
+    for f in glob.glob(f'{can}/*.json'):
+        with open(f) as j_file:
+            match += json.load(j_file)["results"][ori]
+    print(match)
+
+
+if __name__ == '__main__':
+    check_similarity("1211", "1207")
