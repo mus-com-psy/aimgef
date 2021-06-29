@@ -134,8 +134,9 @@ def matching():
 def check_similarity(can, ori):
     match = []
     for f in glob.glob(f'{can}/*.json'):
+        print(f)
         with open(f) as j_file:
-            match += json.load(j_file)["results"][ori]
+            match = match.append(json.load(j_file)["results"][ori])
     print(match)
 
 
