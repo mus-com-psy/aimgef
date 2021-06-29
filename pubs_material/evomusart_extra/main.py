@@ -134,25 +134,20 @@ def matching():
 
 def check_similarity(can, ori):
     match = []
-    for f in glob.glob(f'./out/baseline/{can}/*.json'):
-        print(f)
+    for f in sorted(glob.glob(f'./out/baseline/{can}/*.json')):
+        print(f'\t{f}')
         with open(f) as j_file:
             try:
                 match.extend(json.load(j_file)["results"][ori])
             except KeyError:
                 continue
     fname = f'./out/baseline/{can}/{ori}.pkl'
-    if not os.path.exists(os.path.dirname(fname)):
-        try:
-            os.makedirs(os.path.dirname(fname))
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
+    print(f'[LEN] {len(match)}')
     with open(fname, "wb") as f:
         pickle.dump(match, f)
 
 
 if __name__ == '__main__':
-    for i in glob.glob('./original/validation/*.json'):
-        for j in glob.glob('./original/train/*.mid'):
+    for i in sorted(glob.glob('./original/validation/*.json')):
+        for j in sorted(glob.glob('./original/train/*.mid')):
             check_similarity(os.path.basename(i).split(".")[0], os.path.basename(j))
