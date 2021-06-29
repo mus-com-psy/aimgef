@@ -134,7 +134,7 @@ def matching():
 
 def check_similarity(can, ori):
     match = []
-    for f in sorted(glob.glob(f'./out/baseline/{can}/*.json')):
+    for f in sorted(glob.glob(f'./out/baseline/{can}/*.json'), key=os.path.getmtime):
         print(f'\t{f}')
         with open(f) as j_file:
             try:
