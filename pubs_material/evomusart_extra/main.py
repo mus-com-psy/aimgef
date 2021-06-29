@@ -135,9 +135,10 @@ def check_similarity(can, ori):
     match = []
     for f in glob.glob(f'./out/baseline/{can}/*.json'):
         print(f)
+        print(match)
         with open(f) as j_file:
             try:
-                match = match.append(json.load(j_file)["results"][ori])
+                match.extend(json.load(j_file)["results"][ori])
             except KeyError:
                 continue
     print(match)
