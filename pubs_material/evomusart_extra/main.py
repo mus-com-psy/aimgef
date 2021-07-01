@@ -3,6 +3,24 @@ import glob
 import os
 import pickle
 import errno
+import numpy as np
+import matplotlib.pyplot as plt
+# from scipy.ndimage.interpolation import rotate
+import math
+
+
+def rotate(origin, point, angle):
+    """
+    Rotate a point counterclockwise by a given angle around a given origin.
+
+    The angle should be given in radians.
+    """
+    ox, oy = origin
+    px, py = point
+
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    return qx, qy
 
 
 def create_hash_entry(values, mode, ctime, filename, t_min, t_max):
@@ -147,7 +165,44 @@ def check_similarity(can, ori):
         pickle.dump(match, f)
 
 
+def rebase(x):
+    x -= np.mean(np.array(x), axis=0)
+    # plt.xlim([-20, 20])
+    # plt.ylim([-20, 20])
+    # plt.scatter(x[:, 0], x[:, 1])
+    # plt.show()
+    cov_mat = np.cov(x, rowvar=False)
+    eigen_values, eigen_vectors = np.linalg.eigh(cov_mat)
+    sorted_index = np.argsort(eigen_values)[::-1]
+    sorted_eigenvalue = eigen_values[sorted_index]
+    sorted_eigenvectors = eigen_vectors[:, sorted_index]
+    x = np.dot(sorted_eigenvectors.transpose(), x.transpose()).transpose()
+
+    # plt.scatter(x[:, 0], x[:, 1])
+    # plt.xlim([-20, 20])
+    # plt.ylim([-20, 20])
+    # plt.show()
+
+    result = []
+    for p in x:
+        result.append(rotate([0, 0], p, 45))
+    result = np.array(result)
+    # plt.scatter(result[:, 0], result[:, 1])
+    # plt.xlim([-20, 20])
+    # plt.ylim([-20, 20])
+    # plt.show()
+    # print(result[:, 0] - result[:, 1])
+    return result
+
+
 if __name__ == '__main__':
-    for i in sorted(glob.glob('./original/validation/*.json')):
-        for j in sorted(glob.glob('./original/train/*.mid')):
-            check_similarity(os.path.basename(i).split(".")[0], os.path.basename(j))
+    # tmp = [[-15, -12], [-10, -11], [-4, -8], [4, 7.6], [5, 11]]
+    # rebase(tmp)
+    for j in sorted(glob.glob('./original/train/*.mid')):
+        check_similarity("2322", os.path.basename(j))
+    for j in sorted(glob.glob('./original/train/*.mid')):
+        check_similarity("2368", os.path.basename(j))
+
+    # for i in sorted(glob.glob('./original/validation/*.json')):
+    #     for j in sorted(glob.glob('./original/train/*.mid')):
+    #         check_similarity(os.path.basename(i).split(".")[0], os.path.basename(j))
