@@ -7,6 +7,67 @@ import numpy as np
 import matplotlib.pyplot as plt
 # from scipy.ndimage.interpolation import rotate
 import math
+import argparse
+from tqdm import tqdm
+
+
+def mkdir(filename):
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+
+def build(src_path, tgt_path, mode="triple", t_min=0.1, t_max=4, p_min=1, p_max=12):
+    assert os.path.isdir(src_path)
+    assert os.path.isdir(tgt_path)
+    if mode == "triple":
+        for file in glob.glob(f'{src_path}/*.json'):
+            filename = os.path.basename(file).split(".")[0]
+            print(f'[HASH] {filename}')
+            with open(file) as json_file:
+                pts = json.load(json_file)
+            for i in tqdm(range(len(pts) - 2)):
+                v0 = pts[i]
+                j = i + 1
+                while j < len(pts) - 1:
+                    v1 = pts[j]
+                    td1 = v1[0] - v0[0]
+                    pd1 = v1[1] - v0[1]
+                    apd1 = abs(pd1)
+                    if t_min < td1 < t_max and p_min <= apd1 <= p_max:
+                        k = j + 1
+                        while k < len(pts):
+                            v2 = pts[k]
+                            td2 = v2[0] - v1[0]
+                            pd2 = v2[1] - v1[1]
+                            apd2 = abs(pd2)
+                            if t_min < td2 < t_max and p_min <= apd2 <= p_max:
+                                if pd1 < 0:
+                                    s1 = f'-{apd1}'
+                                else:
+                                    s1 = f'+{apd1}'
+                                if pd2 < 0:
+                                    s2 = f'-{apd2}'
+                                else:
+                                    s2 = f'+{apd2}'
+                                if td1 >= td2:
+                                    tdr = round((td1 / td2) * 10) / 10
+                                    s3 = f'+{tdr:.1f}'
+                                else:
+                                    tdr = round((td2 / td1) * 10) / 10
+                                    s3 = f'-{tdr:.1f}'
+                                filepath = f'{tgt_path}/{s1}/{s2}/{s3}/{filename}.npy'
+                                # print(f'\t[ENTRY] {s1}{s2}{s3}-{filename}')
+                                mkdir(filepath)
+                                if os.path.isfile(filepath):
+                                    np.save(filepath, np.append(np.load(filepath), v0[0]))
+                                else:
+                                    np.save(filepath, np.array([v0[0]]))
+                            k += 1
+                    j += 1
 
 
 def rotate(origin, point, angle):
@@ -115,7 +176,7 @@ class Hasher:
             self.lookup[key] = {filename: [ctime]}
 
 
-def build(hasher, path, mode="duple"):
+def _build(hasher, path, mode="duple"):
     for file in glob.glob(path + "/*.json"):
         print(f'Hashing {file}')
         with open(file) as json_file:
@@ -221,7 +282,14 @@ def rebase(x):
 
 
 if __name__ == '__main__':
-    baseline()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("job", type=str, choices=["build"])
+    parser.add_argument("--mode", type=str, choices=["triple"])
+    parser.add_argument('--src', type=str)
+    parser.add_argument('--tgt', type=str)
+    args = parser.parse_args()
+    if args.job == "build":
+        build(args.src, args.tgt, args.mode)
 
     # for i in sorted(glob.glob('./original/validation/*.json')):
     #     for j in sorted(glob.glob('./original/train/*.mid')):
