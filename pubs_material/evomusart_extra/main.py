@@ -165,8 +165,29 @@ def check_similarity(can, ori):
         pickle.dump(match, f)
 
 
+def baseline(w=16, o=8):
+    for i in ["1211", "1219", "1240", "1827", "1893", "2322", "2368"]:
+        out = []
+        for f in glob.glob(f'./out/baseline/{i}/*.pkl'):
+            with open(f, 'rb') as pkl_file:
+                out.extend(pickle.load(pkl_file))
+        out = sorted(out, key=lambda x: x[0])
+        out = rebase(out)
+        ctime = 0
+        max_time = np.max(out[:, 0]) - w
+        print(np.max(np.abs(out[:, 1] - out[:, 0])))
+        # while ctime <= max_time:
+        #     tmp = out[ctime <= out[:, 0] & out[:, 0] < ctime + w]
+        #     tmp = np.abs(tmp[:, 1] - tmp[:, 0])
+        #     bins = np.arange(0, np.max(tmp), np.max(tmp) / 10)
+        #     inds = np.digitize(tmp, bins)
+        #     np.bincount(inds)
+        #     ctime += (w - o)
+
+
 def rebase(x):
-    x -= np.mean(np.array(x), axis=0)
+    x = np.array(x)
+    x -= np.mean(x, axis=0)
     # plt.xlim([-20, 20])
     # plt.ylim([-20, 20])
     # plt.scatter(x[:, 0], x[:, 1])
@@ -196,12 +217,7 @@ def rebase(x):
 
 
 if __name__ == '__main__':
-    # tmp = [[-15, -12], [-10, -11], [-4, -8], [4, 7.6], [5, 11]]
-    # rebase(tmp)
-    for j in sorted(glob.glob('./original/train/*.mid')):
-        check_similarity("2322", os.path.basename(j))
-    for j in sorted(glob.glob('./original/train/*.mid')):
-        check_similarity("2368", os.path.basename(j))
+    baseline()
 
     # for i in sorted(glob.glob('./original/validation/*.json')):
     #     for j in sorted(glob.glob('./original/train/*.mid')):
