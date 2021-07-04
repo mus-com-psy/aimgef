@@ -167,10 +167,12 @@ def check_similarity(can, ori):
 
 def baseline(w=16, o=8):
     for i in ["1211", "1219", "1240", "1827", "1893", "2322", "2368"]:
-        out = np.array([])
-        for f in glob.glob(f'./out/baseline/{i}/*.pkl'):
+        for j, f in enumerate(glob.glob(f'./out/baseline/{i}/*.pkl')):
             with open(f, 'rb') as pkl_file:
-                out = np.concatenate((out, np.array(pickle.load(pkl_file))), axis=0)
+                if j == 0:
+                    out = np.array(pickle.load(pkl_file))
+                else:
+                    out = np.concatenate((out, np.array(pickle.load(pkl_file))), axis=0)
                 print(f'[{i}] [{f}]')
         # out = sorted(out, key=lambda x: x[0])
         out = rebase(out)
