@@ -171,8 +171,10 @@ def baseline(w=16, o=8):
         for f in glob.glob(f'./out/baseline/{i}/*.pkl'):
             with open(f, 'rb') as pkl_file:
                 out.extend(pickle.load(pkl_file))
-        out = sorted(out, key=lambda x: x[0])
+                print(f'[{i}] [{f}]')
+        # out = sorted(out, key=lambda x: x[0])
         out = rebase(out)
+        print("[DONE] Rebase.")
         ctime = 0
         max_time = np.max(out[:, 0]) - w
         print(np.max(np.abs(out[:, 1] - out[:, 0])))
