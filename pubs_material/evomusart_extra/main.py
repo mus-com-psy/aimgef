@@ -29,6 +29,7 @@ def build(src_path, tgt_path, mode="triple", t_min=0.1, t_max=4, p_min=1, p_max=
             print(f'[HASH] {filename}')
             with open(file) as json_file:
                 pts = json.load(json_file)
+                pts = sorted([list(x) for x in set(tuple(x) for x in pts)], key=lambda x: x[0])
             for i in tqdm(range(len(pts) - 2)):
                 v0 = pts[i]
                 j = i + 1
@@ -68,6 +69,76 @@ def build(src_path, tgt_path, mode="triple", t_min=0.1, t_max=4, p_min=1, p_max=
                                     np.save(filepath, np.array([v0[0]]))
                             k += 1
                     j += 1
+
+
+def match(lookup_path, src_path, tgt_path, mode="triple",
+          w=16, o=8, t_min=0.1, t_max=4, p_min=1, p_max=12):
+    assert os.path.isdir(lookup_path)
+    assert os.path.isdir(src_path)
+    assert os.path.isdir(tgt_path)
+    if mode == "triple":
+        for file in glob.glob(f'{src_path}/*.json'):
+            filename = os.path.basename(file).split(".")[0]
+
+            with open(file) as json_file:
+                points = json.load(json_file)
+                points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: x[0])
+            t = 0
+            max_t = max([p[0] for p in points]) - w
+            while t <= max_t:
+                print(f'[LOOK] {filename} {t}/{max_t}')
+                results = {}
+                pts = [p for p in points if t <= p[0] < t + w]
+                nh = 0
+                for i in tqdm(range(len(pts) - 2)):
+                    v0 = pts[i]
+                    j = i + 1
+                    while j < len(pts) - 1:
+                        v1 = pts[j]
+                        td1 = v1[0] - v0[0]
+                        pd1 = v1[1] - v0[1]
+                        apd1 = abs(pd1)
+                        if t_min < td1 < t_max and p_min <= apd1 <= p_max:
+                            k = j + 1
+                            while k < len(pts):
+                                v2 = pts[k]
+                                td2 = v2[0] - v1[0]
+                                pd2 = v2[1] - v1[1]
+                                apd2 = abs(pd2)
+                                if t_min < td2 < t_max and p_min <= apd2 <= p_max:
+                                    if pd1 < 0:
+                                        s1 = f'-{apd1}'
+                                    else:
+                                        s1 = f'+{apd1}'
+                                    if pd2 < 0:
+                                        s2 = f'-{apd2}'
+                                    else:
+                                        s2 = f'+{apd2}'
+                                    if td1 >= td2:
+                                        tdr = round((td1 / td2) * 10) / 10
+                                        s3 = f'+{tdr:.1f}'
+                                    else:
+                                        tdr = round((td2 / td1) * 10) / 10
+                                        s3 = f'-{tdr:.1f}'
+                                    if os.path.isdir(f'{lookup_path}/{s1}/{s2}/{s3}'):
+                                        nh += 1
+                                        for found in glob.glob(f'{lookup_path}/{s1}/{s2}/{s3}/*.npy'):
+                                            tgt_name = os.path.basename(found).split(".")[0]
+                                            tmp = np.load(found)
+                                            on = np.repeat(v0[0], tmp.shape[0])
+                                            to_concat = np.vstack((on, tmp)).T
+                                            if tgt_name in results.keys():
+                                                results[tgt_name] = np.concatenate(
+                                                    (results[tgt_name], to_concat), axis=0)
+                                            else:
+                                                results[tgt_name] = to_concat
+                                k += 1
+                        j += 1
+                for k, v in results.items():
+                    x = rebase(v)
+                    x = x[:, 0] - x[:, 1]
+                    np.save(f'{tgt_path}/{w}-{o}/{filename}/{k}/{t}.npy', x)
+                t += w - o
 
 
 def rotate(origin, point, angle):
@@ -253,10 +324,12 @@ def baseline(w=16, o=8):
 def rebase(x):
     # x = np.array(x)
     x -= np.mean(x, axis=0)
-    # plt.xlim([-20, 20])
-    # plt.ylim([-20, 20])
-    # plt.scatter(x[:, 0], x[:, 1])
-    # plt.show()
+
+    plt.scatter(x[:, 0], x[:, 1])
+    plt.xlim([-200, 200])
+    plt.ylim([-200, 400])
+    plt.show()
+
     cov_mat = np.cov(x, rowvar=False)
     eigen_values, eigen_vectors = np.linalg.eigh(cov_mat)
     sorted_index = np.argsort(eigen_values)[::-1]
@@ -264,32 +337,35 @@ def rebase(x):
     sorted_eigenvectors = eigen_vectors[:, sorted_index]
     x = np.dot(sorted_eigenvectors.transpose(), x.transpose()).transpose()
 
-    # plt.scatter(x[:, 0], x[:, 1])
-    # plt.xlim([-20, 20])
-    # plt.ylim([-20, 20])
-    # plt.show()
+    plt.scatter(x[:, 0], x[:, 1])
+    plt.xlim([-200, 200])
+    plt.ylim([-200, 400])
+    plt.show()
 
     result = []
     for p in x:
         result.append(rotate([0, 0], p, 45))
     result = np.array(result)
-    # plt.scatter(result[:, 0], result[:, 1])
-    # plt.xlim([-20, 20])
-    # plt.ylim([-20, 20])
-    # plt.show()
+    plt.scatter(result[:, 0], result[:, 1])
+    plt.xlim([0, 200])
+    plt.ylim([0, 200])
+    plt.show()
     # print(result[:, 0] - result[:, 1])
     return result
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("job", type=str, choices=["build"])
+    parser.add_argument("job", type=str, choices=["build", "match"])
     parser.add_argument("--mode", type=str, choices=["triple"])
-    parser.add_argument('--src', type=str)
-    parser.add_argument('--tgt', type=str)
+    parser.add_argument("--lookup", type=str)
+    parser.add_argument("--src", type=str)
+    parser.add_argument("--tgt", type=str)
     args = parser.parse_args()
     if args.job == "build":
         build(args.src, args.tgt, args.mode)
+    elif args.job == "match":
+        match(args.lookup, args.src, args.tgt, args.mode)
 
     # for i in sorted(glob.glob('./original/validation/*.json')):
     #     for j in sorted(glob.glob('./original/train/*.mid')):
