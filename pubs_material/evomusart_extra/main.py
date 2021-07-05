@@ -124,6 +124,7 @@ def match(lookup_path, src_path, tgt_path, mode="triple",
                                         s3 = f'-{tdr:.1f}'
                                     if os.path.isdir(f'{lookup_path}/{s1}/{s2}/{s3}'):
                                         nh += 1
+                                        print(f'[nh] {nh}')
                                         for found in glob.glob(f'{lookup_path}/{s1}/{s2}/{s3}/*.npy'):
                                             tgt_name = os.path.basename(found).split(".")[0]
                                             tmp = np.load(found)
