@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import math
 import argparse
 from tqdm import tqdm
+from sklearn import datasets, linear_model
 
 
 def mkdir(filename):
@@ -79,18 +80,19 @@ def match(lookup_path, src_path, tgt_path, mode="triple",
     if mode == "triple":
         for file in glob.glob(f'{src_path}/*.json'):
             filename = os.path.basename(file).split(".")[0]
-
+            print(f'[LOOK] {filename}')
             with open(file) as json_file:
                 points = json.load(json_file)
                 points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: x[0])
             t = 0
             max_t = max([p[0] for p in points]) - w
             while t <= max_t:
-                print(f'[LOOK] {filename} {t}/{max_t}')
-                results = {}
+                print(f'\t{t}/{max_t}')
+                matched = {}
+                out = {}
                 pts = [p for p in points if t <= p[0] < t + w]
                 nh = 0
-                for i in tqdm(range(len(pts) - 2)):
+                for i in range(len(pts) - 2):
                     v0 = pts[i]
                     j = i + 1
                     while j < len(pts) - 1:
@@ -127,21 +129,24 @@ def match(lookup_path, src_path, tgt_path, mode="triple",
                                             tmp = np.load(found)
                                             on = np.repeat(v0[0], tmp.shape[0])
                                             to_concat = np.vstack((on, tmp)).T
-                                            if tgt_name in results.keys():
-                                                results[tgt_name] = np.concatenate(
-                                                    (results[tgt_name], to_concat), axis=0)
+                                            if tgt_name in matched.keys():
+                                                matched[tgt_name] = np.concatenate(
+                                                    (matched[tgt_name], to_concat), axis=0)
                                             else:
-                                                results[tgt_name] = to_concat
+                                                matched[tgt_name] = to_concat
                                 k += 1
                         j += 1
-                for k, v in results.items():
-                    x = rebase(v)
-                    x = x[:, 0] - x[:, 1]
-                    np.save(f'{tgt_path}/{w}-{o}/{filename}/{k}/{t}.npy', x)
+                for k, v in matched.items():
+                    # x = rebase(v)
+                    x = np.abs(v[:, 0] - v[:, 1])
+                    out[k] = np.count_nonzero(x == 0) / nh
+                mkdir(f'{tgt_path}/{w}-{o}/{filename}/{t}.json')
+                with open(f'{tgt_path}/{w}-{o}/{filename}/{t}.json', "w") as fp:
+                    json.dump(out, fp)
                 t += w - o
 
 
-def rotate(origin, point, angle):
+def rotate(origin, point, angle=math.pi / 4):
     """
     Rotate a point counterclockwise by a given angle around a given origin.
 
@@ -321,37 +326,39 @@ def baseline(w=16, o=8):
         #     ctime += (w - o)
 
 
-def rebase(x):
-    # x = np.array(x)
-    x -= np.mean(x, axis=0)
+def rebase(x, mode="regr"):
+    if mode == "regr":
+        plt.scatter(x[:, 0], x[:, 1])
+        plt.xlim(0, 16)
+        plt.ylim(0, 16)
+        plt.show()
+        regr = linear_model.LinearRegression()
+        regr.fit(x[:, 0].reshape(-1, 1), x[:, 1].reshape(-1, 1))
+        x[:, 1] -= regr.intercept_
+        result = []
+        for p in x:
+            result.append(rotate([0, 0], p, angle=math.atan(1) - math.atan(regr.coef_)))
+        x = np.array(result)
+        plt.scatter(x[:, 0], x[:, 1])
+        plt.xlim(0, 16)
+        plt.ylim(0, 16)
+        plt.show()
+        return x
+    else:
+        x -= np.mean(x, axis=0)
+        cov_mat = np.cov(x, rowvar=False)
+        eigen_values, eigen_vectors = np.linalg.eigh(cov_mat)
+        sorted_index = np.argsort(eigen_values)[::-1]
+        # sorted_eigenvalue = eigen_values[sorted_index]
+        sorted_eigenvectors = eigen_vectors[:, sorted_index]
+        x = np.dot(sorted_eigenvectors.transpose(), x.transpose()).transpose()
 
-    plt.scatter(x[:, 0], x[:, 1])
-    plt.xlim([-200, 200])
-    plt.ylim([-200, 400])
-    plt.show()
-
-    cov_mat = np.cov(x, rowvar=False)
-    eigen_values, eigen_vectors = np.linalg.eigh(cov_mat)
-    sorted_index = np.argsort(eigen_values)[::-1]
-    sorted_eigenvalue = eigen_values[sorted_index]
-    sorted_eigenvectors = eigen_vectors[:, sorted_index]
-    x = np.dot(sorted_eigenvectors.transpose(), x.transpose()).transpose()
-
-    plt.scatter(x[:, 0], x[:, 1])
-    plt.xlim([-200, 200])
-    plt.ylim([-200, 400])
-    plt.show()
-
-    result = []
-    for p in x:
-        result.append(rotate([0, 0], p, 45))
-    result = np.array(result)
-    plt.scatter(result[:, 0], result[:, 1])
-    plt.xlim([0, 200])
-    plt.ylim([0, 200])
-    plt.show()
-    # print(result[:, 0] - result[:, 1])
-    return result
+        result = []
+        for p in x:
+            result.append(rotate([0, 0], p))
+        result = np.array(result)
+        plt.scatter(result[:, 0], result[:, 1])
+        return result
 
 
 if __name__ == '__main__':
