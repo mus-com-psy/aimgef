@@ -1,6 +1,8 @@
 import os
 import errno
 import numpy as np
+import glob
+import json
 
 
 def mkdir(filename):
@@ -23,7 +25,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
     :param p_max: maximum pitch difference
     :return: a list of entries
     """
-    lookup = {}
+    match = {"nm": 0, "match": {}}
     for i in range(len(pts) - 2):
         v_0 = pts[i]
         for j in range(i + 1, len(pts) - 1):
@@ -59,13 +61,19 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
                                 np.save(filename, np.append(np.load(filename), v_0[0]))
                             else:
                                 np.save(filename, np.array([v_0[0]]))
-                            # if f'{s_0}/{s_1}/{s_2}' in lookup.keys():
-                            #     lookup[f'{s_0}/{s_1}/{s_2}'].append(v_0[0])
-                            # else:
-                            #     lookup[f'{s_0}/{s_1}/{s_2}'] = [v_0[0]]
-                            # # results.append([s_0, s_1, s_2, v_0, v_1, v_2])
                         elif mode == "match":
-                            pass
+                            if os.path.isdir(f'./lookup/{s_0}/{s_1}/{s_2}'):
+                                match["nm"] += 1
+                                for f in glob.glob(f'./lookup/{s_0}/{s_1}/{s_2}/*.npy'):
+                                    name = os.path.basename(f).split(".")[0]
+                                    on = np.load(f)
+                                    if name in match["match"].keys():
+                                        match["match"][name] += [[v_0[0], o] for o in on.tolist()]
+                                    else:
+                                        match["match"][name] = [[v_0[0], o] for o in on.tolist()]
                         else:
                             print("[ERROR] Invalid model.")
-    return lookup
+    if mode == "match":
+        mkdir(f'./match/{target}.json')
+        with open(f'./match/{target}.json', "w") as fp:
+            json.dump(match, fp)
