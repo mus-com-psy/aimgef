@@ -11,6 +11,10 @@ fs.readFile('./maestro-v3.0.0/maestro-v3.0.0.json',
         }
         try {
             const index = JSON.parse(jsonString)
+            fs.writeFileSync(
+                    "./data/index.json",
+                    JSON.stringify(index["midi_filename"])
+                )
             for (const [i, filename] of Object.entries(index["midi_filename"])) {
                 console.log(`[PROCESSING]\t${String(i).padStart(4, '_')}\t${filename}`)
                 let points = getPoints(path.join(__dirname, "maestro-v3.0.0", String(filename)), "mm")
