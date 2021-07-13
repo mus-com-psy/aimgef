@@ -84,7 +84,7 @@ if __name__ == '__main__':
     job_list = []
     with open("./maestro-v3.0.0/maestro-v3.0.0.json") as json_file:
         maestro = json.load(json_file)
-    for key, value in maestro["split"]:
+    for key, value in maestro["split"].items():
         if value == "train":
             src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
             with open(f'./maestro-v3.0.0/{src}') as json_file:
