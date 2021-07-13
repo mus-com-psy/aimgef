@@ -27,6 +27,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
     :return: a list of entries
     """
     match = {"nm": 0, "match": {}}
+    print(f'[PROCESSING]\t{target}')
     for i in range(len(pts) - 2):
         v_0 = pts[i]
         for j in range(i + 1, len(pts) - 1):
@@ -93,5 +94,4 @@ if __name__ == '__main__':
                 job_list.append([points, "build", key])
 
     with Pool(cpu_count() - 1) as p:
-        p.starmap(entry, points)
-    print("[DONE]")
+        p.starmap(entry, job_list)
