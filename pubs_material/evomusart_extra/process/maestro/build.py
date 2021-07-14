@@ -124,7 +124,6 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
         cur.execute(sql)
         con.commit()
     match = {"nm": 0, "match": {}}
-    print(f'[PROCESSING]\t{target}')
     for i in range(len(pts) - 2):
         v_0 = pts[i]
         for j in range(i + 1, len(pts) - 1):
@@ -184,6 +183,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
         mkdir(f'./data/match/{target}.json')
         with open(f'./data/match/{target}.json', "w") as fp:
             json.dump(match, fp)
+    print(f'[DONE]\t{target}')
 
 
 if __name__ == '__main__':
