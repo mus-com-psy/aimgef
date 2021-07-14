@@ -120,8 +120,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
     """
     con = sqlite3.connect("./data/lookup.db")
     cur = con.cursor()
-    cur.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)')
-    con.commit()
+
     match = {"nm": 0, "match": {}}
     for i in range(len(pts) - 2):
         v_0 = pts[i]
@@ -209,6 +208,8 @@ if __name__ == '__main__':
     """
     Version 2
     """
+    connection = sqlite3.connect("./data/lookup.db")
+    cursor = connection.cursor()
     with open("./maestro-v3.0.0/maestro-v3.0.0.json") as json_file:
         maestro = json.load(json_file)
     job_list = []
@@ -216,9 +217,12 @@ if __name__ == '__main__':
         if value == "train":
             src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
             with open(f'./maestro-v3.0.0/{src}') as json_file:
+                cursor.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)')
                 points = json.load(json_file)
                 points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: x[0])
             job_list.append([points, "build", key])
+    connection.commit()
+    cursor.close()
 
     with Pool(cpu_count() - 1) as p:
         p.starmap(entry, job_list)
