@@ -120,9 +120,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
     :return: a list of entries
     """
     if mode == "build":
-        sql = f'CREATE TABLE IF NOT EXISTS _{target}(entry INTEGER, ontime REAL)'
-        cur.execute(sql)
-        con.commit()
+        pass
     match = {"nm": 0, "match": {}}
     for i in range(len(pts) - 2):
         v_0 = pts[i]
@@ -214,6 +212,9 @@ if __name__ == '__main__':
         if value == "train":
             src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
             with open(f'./maestro-v3.0.0/{src}') as json_file:
+                sql = f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)'
+                cur.execute(sql)
+                con.commit()
                 points = json.load(json_file)
                 points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: x[0])
             job_list.append([points, "build", key])
