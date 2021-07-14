@@ -118,7 +118,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
     :param p_max: maximum pitch difference
     :return: a list of entries
     """
-    con = sqlite3.connect("./data/lookup.db")
+    con = sqlite3.connect("./data/lookup.db", timeout=30.0)
     cur = con.cursor()
 
     match = {"nm": 0, "match": {}}
@@ -177,7 +177,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
                                         match["match"][name] = [[v_0[0], o] for o in on.tolist()]
                         else:
                             print("[ERROR] Invalid model.")
-    con.commit()
+        con.commit()
     if mode == "match":
         mkdir(f'./data/match/{target}.json')
         with open(f'./data/match/{target}.json', "w") as fp:
