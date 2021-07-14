@@ -164,7 +164,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
                             Version 2
                             """
                             cur.execute(f'INSERT INTO _{target} VALUES ({entry2index[s_0 + s_1 + s_2]}, {v_0[0]})')
-                            con.commit()
+
                         elif mode == "match":
                             if os.path.isdir(f'./data/lookup/{s_0}/{s_1}/{s_2}'):
                                 match["nm"] += 1
@@ -177,10 +177,12 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
                                         match["match"][name] = [[v_0[0], o] for o in on.tolist()]
                         else:
                             print("[ERROR] Invalid model.")
+    con.commit()
     if mode == "match":
         mkdir(f'./data/match/{target}.json')
         with open(f'./data/match/{target}.json', "w") as fp:
             json.dump(match, fp)
+
     print(f'[DONE]\t{target}')
 
 
@@ -214,11 +216,11 @@ if __name__ == '__main__':
             with open(f'./maestro-v3.0.0/{src}') as json_file:
                 sql = f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)'
                 cur.execute(sql)
-                con.commit()
                 points = json.load(json_file)
                 points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: x[0])
             job_list.append([points, "build", key])
 
+    con.commit()
     with Pool(cpu_count() - 1) as p:
         p.starmap(entry, job_list)
     cur.close()
