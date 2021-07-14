@@ -95,8 +95,7 @@ for s0 in ['+1', '+2', '+3', '+4', '+5', '+6', '+7', '+8', '+9', '+10', '+11', '
             entry2index[s0 + s1 + s2] = count
             index2entry[count] = s0 + s1 + s2
             count += 1
-con = sqlite3.connect("./data/lookup.db")
-cur = con.cursor()
+
 
 
 def mkdir(filename):
@@ -119,8 +118,10 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
     :param p_max: maximum pitch difference
     :return: a list of entries
     """
-    if mode == "build":
-        pass
+    con = sqlite3.connect("./data/lookup.db")
+    cur = con.cursor()
+    cur.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)')
+    con.commit()
     match = {"nm": 0, "match": {}}
     for i in range(len(pts) - 2):
         v_0 = pts[i]
@@ -184,6 +185,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
             json.dump(match, fp)
 
     print(f'[DONE]\t{target}')
+    cur.close()
 
 
 if __name__ == '__main__':
@@ -214,13 +216,10 @@ if __name__ == '__main__':
         if value == "train":
             src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
             with open(f'./maestro-v3.0.0/{src}') as json_file:
-                sql = f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)'
-                cur.execute(sql)
                 points = json.load(json_file)
                 points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: x[0])
             job_list.append([points, "build", key])
 
-    con.commit()
     with Pool(cpu_count() - 1) as p:
         p.starmap(entry, job_list)
-    cur.close()
+
