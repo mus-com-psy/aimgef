@@ -17,7 +17,7 @@ fs.readFile('./maestro-v3.0.0/maestro-v3.0.0.json',
                 )
             for (const [i, filename] of Object.entries(index["midi_filename"])) {
                 console.log(`[PROCESSING]\t${String(i).padStart(4, '_')}\t${filename}`)
-                let points = getPoints(path.join(__dirname, "maestro-v3.0.0", String(filename)), "mm")
+                let points = getPoints(path.join(__dirname, "maestro-v3.0.0", String(filename)), "tone")
                 const output = path.join(
                         __dirname,
                         "maestro-v3.0.0",
@@ -65,7 +65,8 @@ function getPoints(filename, mode = "mm") {
             midi.tracks.forEach(function (track) {
                 track.notes.forEach(function (n) {
                     points.push([
-                        n.ticks / midi.header.ppq,
+                        // n.ticks / midi.header.ppq,
+                        n.time,
                         n.midi,
                         // n.durationTicks / midi.header.ppq,
                         // track.channel,
