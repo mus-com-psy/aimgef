@@ -164,7 +164,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
                             Version 2
                             """
                             cur.execute(f'INSERT INTO _{target} VALUES ({entry2index[s_0 + s_1 + s_2]}, {v_0[0]})')
-
+                            con.commit()
                         elif mode == "match":
                             if os.path.isdir(f'./data/lookup/{s_0}/{s_1}/{s_2}'):
                                 match["nm"] += 1
@@ -177,7 +177,7 @@ def entry(pts, mode, target, t_min=0.1, t_max=4, p_min=1, p_max=12):
                                         match["match"][name] = [[v_0[0], o] for o in on.tolist()]
                         else:
                             print("[ERROR] Invalid model.")
-        con.commit()
+
     if mode == "match":
         mkdir(f'./data/match/{target}.json')
         with open(f'./data/match/{target}.json', "w") as fp:
