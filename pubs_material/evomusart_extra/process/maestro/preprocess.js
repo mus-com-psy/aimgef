@@ -56,7 +56,7 @@ function getPoints(filename, mode = "mm") {
             })
             // console.log("staffNos:", staffNos)
             points = co.notes.map(n => {
-                return [n.ontime, n.MNN]
+                return [n.time, n.MNN]
             })
             break
         case "tone":
