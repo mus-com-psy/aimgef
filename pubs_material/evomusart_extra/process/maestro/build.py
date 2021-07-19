@@ -172,8 +172,8 @@ if __name__ == '__main__':
         """
         Version 2
         """
-        with open("./data/tmp.txt", "r") as txt_file:
-            done = [x[7:-1] for x in txt_file.readlines()]
+        # with open("./data/tmp.txt", "r") as txt_file:
+        #     done = [x[7:-1] for x in txt_file.readlines()]
 
         connection = sqlite3.connect("./data/lookup.db")
         cursor = connection.cursor()
