@@ -120,28 +120,28 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
                             """
                             match["nh"] += 1
                             for t in match_table:
-                                cur.execute(f'SELECT ontime FROM _{t} WHERE entry = {entry2index[s_0 + s_1 + s_2]};')
+                                cur.execute(f'SELECT * FROM _{t} WHERE entry = {entry2index[s_0 + s_1 + s_2]};')
                                 result = cur.fetchall()
-                                result = [[v_0[0], x[0]] for x in result]
+                                # result = [[v_0[0], x[0]] for x in result]
                                 if result:
-                                    if t in match["match"].keys():
-                                        match["match"][t] += result
-                                    else:
-                                        match["match"][t] = result
-                                    # to_insert = [(entry2index[s_0 + s_1 + s_2], t, v_0[0], x[1]) for x in result]
-                                    # m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?)', to_insert)
-                                    # m_con.commit()
+                                #     if t in match["match"].keys():
+                                #         match["match"][t] += result
+                                #     else:
+                                #         match["match"][t] = result
+                                    to_insert = [(entry2index[s_0 + s_1 + s_2], t, v_0[0], x[1]) for x in result]
+                                    m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?)', to_insert)
+                                    m_con.commit()
 
                         else:
                             print("[ERROR] Invalid model.")
-        if mode == "match":
-            print(f'\t[REPORT] {target}\t{i}/{len(pts)}')
-    if mode == "match":
-        # mkdir(f'./data/match/{target}.json')
-        with open(f'./data/match/{target}.json', "w") as fp:
-            json.dump(match, fp)
+        # if mode == "match":
+        #     print(f'\t[REPORT] {target}\t{i}/{len(pts)}')
     # if mode == "match":
-        # m_cur.execute(f'-- INSERT INTO entry_count VALUES ({target}, {nh})')
+    #     # mkdir(f'./data/match/{target}.json')
+    #     with open(f'./data/match/{target}.json', "w") as fp:
+    #         json.dump(match, fp)
+    if mode == "match":
+        m_cur.execute(f'INSERT INTO entry_count VALUES ({target}, {match["nh"]})')
     print(f'[DONE]\t{target}')
     cur.close()
     m_cur.close()
