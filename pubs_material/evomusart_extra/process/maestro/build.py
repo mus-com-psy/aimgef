@@ -58,7 +58,7 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
     m_con = sqlite3.connect("./data/match.db", timeout=30.0)
     cur = con.cursor()
     m_cur = m_con.cursor()
-    nh = 0
+    match = {"nh": 0, "match": {}}
     for i in range(len(pts) - 2):
         v_0 = pts[i]
         for j in range(i + 1, len(pts) - 1):
@@ -118,25 +118,30 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
                             """
                             Version 2
                             """
+                            match["nh"] += 1
                             for t in match_table:
-                                cur.execute(f'SELECT * FROM _{t} WHERE entry = {entry2index[s_0 + s_1 + s_2]};')
+                                cur.execute(f'SELECT ontime FROM _{t} WHERE entry = {entry2index[s_0 + s_1 + s_2]};')
                                 result = cur.fetchall()
+                                result = [[v_0[0], x[0]] for x in result]
                                 if result:
-                                    nh += 1
-                                    to_insert = [(entry2index[s_0 + s_1 + s_2], t, v_0[0], x[1]) for x in result]
-                                    m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?)', to_insert)
-                                    m_con.commit()
+                                    if t in match["match"].keys():
+                                        match["match"][t] += result
+                                    else:
+                                        match["match"][t] = result
+                                    # to_insert = [(entry2index[s_0 + s_1 + s_2], t, v_0[0], x[1]) for x in result]
+                                    # m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?)', to_insert)
+                                    # m_con.commit()
 
                         else:
                             print("[ERROR] Invalid model.")
         if mode == "match":
             print(f'\t[REPORT] {target}\t{i}/{len(pts)}')
-    # if mode == "match":
-    #     mkdir(f'./data/match/{target}.json')
-    #     with open(f'./data/match/{target}.json', "w") as fp:
-    #         json.dump(match, fp)
     if mode == "match":
-        m_cur.execute(f'INSERT INTO entry_count VALUES ({target}, {nh})')
+        # mkdir(f'./data/match/{target}.json')
+        with open(f'./data/match/{target}.json', "w") as fp:
+            json.dump(match, fp)
+    # if mode == "match":
+        # m_cur.execute(f'-- INSERT INTO entry_count VALUES ({target}, {nh})')
     print(f'[DONE]\t{target}')
     cur.close()
     m_cur.close()
@@ -199,7 +204,8 @@ if __name__ == '__main__':
             if value in ["validation", "test"]:
                 src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
                 with open(f'./maestro-v3.0.0/{src}') as json_file:
-                    cursor.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, target INTEGER, q_ontime REAL, t_ontime REAL)')
+                    cursor.execute(
+                        f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, target INTEGER, q_ontime REAL, t_ontime REAL)')
                     points = json.load(json_file)
                     points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: (x[0], x[1]))
                 job_list.append([points, "match", key])
