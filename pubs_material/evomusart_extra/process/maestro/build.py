@@ -134,8 +134,8 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
 
                         else:
                             print("[ERROR] Invalid model.")
-        # if mode == "match":
-        #     print(f'\t[REPORT] {target}\t{i}/{len(pts)}')
+        if mode == "match" and i % 10 == 0:
+            print(f'\t[REPORT] {target}\t{i}/{len(pts)}')
     # if mode == "match":
     #     # mkdir(f'./data/match/{target}.json')
     #     with open(f'./data/match/{target}.json', "w") as fp:
