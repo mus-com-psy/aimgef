@@ -61,6 +61,7 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
     match = {"nh": 0, "match": {}}
     for i in range(len(pts) - 2):
         v_0 = pts[i]
+        entries = []
         for j in range(i + 1, len(pts) - 1):
             v_1 = pts[j]
             td_0 = v_1[0] - v_0[0]
@@ -100,8 +101,9 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
                             """
                             Version 2
                             """
-                            cur.execute(f'INSERT INTO _{target} VALUES ({entry2index[s_0 + s_1 + s_2]}, {v_0[0]})')
-                            con.commit()
+                            entries.append((entry2index[s_0 + s_1 + s_2], v_0[0]))
+                            # cur.execute(f'INSERT INTO _{target} VALUES ({entry2index[s_0 + s_1 + s_2]}, {v_0[0]})')
+                            # con.commit()
                         elif mode == "match":
                             """
                             Version 1
@@ -134,6 +136,9 @@ def entry(pts, mode, target, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax):
 
                         else:
                             print("[ERROR] Invalid model.")
+        if mode == "build":
+            cur.executemany(f'INSERT INTO _{target} VALUES (?,?)', entries)
+            con.commit()
         if mode == "match" and i % 10 == 0:
             print(f'\t[REPORT] {target}\t{i}/{len(pts)}')
     # if mode == "match":
