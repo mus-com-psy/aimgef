@@ -180,20 +180,20 @@ if __name__ == '__main__':
         with open("./maestro-v3.0.0/maestro-v3.0.0.json") as json_file:
             maestro = json.load(json_file)
         job_list = []
-        for key, value in maestro["split"].items():
-            if value == "train":
-                if not (key in done):
-                    src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
-                    with open(f'./maestro-v3.0.0/{src}') as json_file:
-                        # cursor.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)')
-                        points = json.load(json_file)
-                        points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: (x[0], x[1]))
-                    job_list.append([points, "build", key])
+        for key, value in maestro["midi_filename"].items():
+            # if value == "train":
+            #     if not (key in done):
+            src = f'{os.path.splitext(value)[0]}.json'
+            with open(f'./maestro-v3.0.0/{src}') as json_file:
+                cursor.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)')
+                points = json.load(json_file)
+                points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: (x[0], x[1]))
+                job_list.append([points, "build", key])
         connection.commit()
         cursor.close()
-
         with Pool(cpu_count() - 1) as p:
             p.starmap(entry, job_list)
+
     elif args.job == "match":
         connection = sqlite3.connect("./data/match.db")
         cursor = connection.cursor()
