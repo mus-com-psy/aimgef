@@ -11,11 +11,11 @@ from torch.utils import data
 from torch.utils.tensorboard import SummaryWriter
 from torch.distributions import Categorical
 
-from transformer import Transformer
-from optimizer import CustomSchedule
-from data import Dataset
-from loss import vae_loss, ce_loss
-from midi_io import MIDI
+from .transformer import Transformer
+from .optimizer import CustomSchedule
+from .data import Dataset
+from .loss import vae_loss, ce_loss
+from .midi_io import MIDI
 
 
 def timer(start, end):
