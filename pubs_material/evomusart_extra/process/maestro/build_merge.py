@@ -6,8 +6,8 @@ import sqlite3
 import argparse
 import pickle
 
-tMin = 0.25
-tMax = 1
+tMin = 0.5
+tMax = 2
 pMin = 1
 pMax = 7
 entry2index = {}
@@ -55,7 +55,7 @@ def entry(pts, mode, target, sp, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax)
     :param p_max: maximum pitch difference
     :return: a list of entries
     """
-    l_con = sqlite3.connect(f'./data/{sp}.db', timeout=30.0)
+    l_con = sqlite3.connect("./data/maestro.db", timeout=30.0)
     l_cur = l_con.cursor()
     if mode == "build":
         for i in range(len(pts) - 2):
@@ -87,30 +87,29 @@ def entry(pts, mode, target, sp, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax)
                             else:
                                 tdr = float(round((td_1 / td_0) * 10) / 10)
                                 s_2 = f'-{tdr:.1f}'
-                            entries.append((entry2index[s_0 + s_1 + s_2], v_0[0]))
-            l_cur.executemany(f'INSERT INTO _{target} VALUES (?,?);', entries)
+                            entries.append((entry2index[s_0 + s_1 + s_2], v_0[0], target))
+            l_cur.executemany(f'INSERT INTO {sp} VALUES (?,?,?);', entries)
             l_con.commit()
 
     elif mode == "match":
         match = {}
-        q_con = sqlite3.connect("./data/query.db", timeout=30.0)
+        q_con = sqlite3.connect("./data/validation.db", timeout=30.0)
         q_cur = q_con.cursor()
         m_con = sqlite3.connect("./data/match.db", timeout=30.0)
         m_cur = m_con.cursor()
-        # m_cur.execute(f'INSERT INTO entry_count VALUES ({target},{len(query)});')
-        for i in lookup_tables:
-            match[i] = 0
-            q_cur.execute(f'SELECT * FROM _{target};')
-            for q in q_cur:
-                # l_cur.execute(f'SELECT * FROM _{i} WHERE entry = {q[0]}')
-                l_cur.execute(f'SELECT COUNT(*) '
-                              f'FROM _{i} '
-                              f'WHERE entry = {q[0]} AND ontime >= {q[1] * 0.75} AND ontime <= {q[1] * 1.25};')
-                # m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?);', [(q[0], i, q[1], x[1]) for x in l_cur])
-                # m_con.commit()
-                c = l_cur.fetchall()
-                match[i] += c[0][0]
-            print(f'\t[PROGRESS]\t{target} - {i}')
+        i = 0
+        match[i] = 0
+        q_cur.execute(f'SELECT * FROM _{target};')
+        for q in q_cur:
+            # l_cur.execute(f'SELECT * FROM _{i} WHERE entry = {q[0]}')
+            l_cur.execute(f'SELECT COUNT(*) '
+                          f'FROM _{i} '
+                          f'WHERE entry = {q[0]} AND ontime >= {q[1] * 0.75} AND ontime <= {q[1] * 1.25};')
+            # m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?);', [(q[0], i, q[1], x[1]) for x in l_cur])
+            # m_con.commit()
+            c = l_cur.fetchall()
+            match[i] += c[0][0]
+        print(f'\t[PROGRESS]\t{target} - {i}')
         with open(f'./data/match/{target}.json', "w") as fp:
             json.dump(match, fp)
 
@@ -132,18 +131,17 @@ if __name__ == '__main__':
     with open("./maestro-v3.0.0/maestro-v3.0.0.json") as json_file:
         maestro = json.load(json_file)
     if args.job == "build":
+        connection = sqlite3.connect("./data/maestro.db")
+        cursor = connection.cursor()
         for split in ["train", "validation", "test"]:
-            connection = sqlite3.connect(f'./data/{split}.db')
-            cursor = connection.cursor()
-            for key, value in maestro["split"].items():
-                if value == split:
-                    src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.pkl'
-                    with open(f'./maestro-v3.0.0/{src}', 'rb') as f:
-                        points = pickle.load(f)
-                        cursor.execute(f'CREATE TABLE IF NOT EXISTS _{key}(entry INTEGER, ontime REAL)')
-                        job_list.append([points, "build", key, split])
-            connection.commit()
-            cursor.close()
+            cursor.execute(f'CREATE TABLE IF NOT EXISTS {split}(entry INTEGER, ontime REAL, excerpt INTEGER)')
+        connection.commit()
+        cursor.close()
+        for key, value in maestro["midi_filename"].items():
+            src = f'{os.path.splitext(value)[0]}.pkl'
+            with open(f'./maestro-v3.0.0/{src}', 'rb') as f:
+                points = pickle.load(f)
+                job_list.append([points, "build", key, maestro["split"][key]])
 
     elif args.job == "match":
         connection = sqlite3.connect("./data/match.db")
