@@ -5,11 +5,12 @@ import json
 import sqlite3
 import argparse
 import pickle
+import time
 
 tMin = 0.5
 tMax = 2
 pMin = 1
-pMax = 7
+pMax = 6
 entry2index = {}
 index2entry = {}
 count = 0
@@ -32,6 +33,28 @@ for key, value in maestro["split"].items():
         lookup_tables.append(key)
     else:
         query_tables.append(key)
+
+
+def check_similarity(query, trans, bin_size=0.25):
+    trans = sorted(trans, key=lambda x: x[1])
+    tmp = []
+    for i, t in enumerate(trans):
+        tmp.append((i, len([x for x in trans if t <= x[1] <= t + bin_size])))
+    max_i = max(tmp, key=lambda x: x[1])
+    trans = trans[max_i[0]:max_i[0] + max_i[1]]
+    trans_count = {}
+    for i in trans:
+        trans_count[i[0]] = trans_count.get(i[0], 0) + 1
+    num_unique_entries = sum([item[1] for item in query.items()])
+    result = 0
+    for k, v in query.items():
+        c = trans_count.get(k, 0)
+        if c > v:
+            result += v / num_unique_entries
+        else:
+            result += k / num_unique_entries
+    return result
+
 
 
 def mkdir(filename):
@@ -92,29 +115,32 @@ def entry(pts, mode, target, sp, t_min=tMin, t_max=tMax, p_min=pMin, p_max=pMax)
             l_con.commit()
 
     elif mode == "match":
-        match = {}
-        q_con = sqlite3.connect("./data/validation.db", timeout=30.0)
-        q_cur = q_con.cursor()
-        m_con = sqlite3.connect("./data/match.db", timeout=30.0)
-        m_cur = m_con.cursor()
-        i = 0
-        match[i] = 0
-        q_cur.execute(f'SELECT * FROM _{target};')
-        for q in q_cur:
-            # l_cur.execute(f'SELECT * FROM _{i} WHERE entry = {q[0]}')
-            l_cur.execute(f'SELECT COUNT(*) '
-                          f'FROM _{i} '
-                          f'WHERE entry = {q[0]} AND ontime >= {q[1] * 0.75} AND ontime <= {q[1] * 1.25};')
-            # m_cur.executemany(f'INSERT INTO _{target} VALUES (?,?,?,?);', [(q[0], i, q[1], x[1]) for x in l_cur])
-            # m_con.commit()
-            c = l_cur.fetchall()
-            match[i] += c[0][0]
-        print(f'\t[PROGRESS]\t{target} - {i}')
-        with open(f'./data/match/{target}.json', "w") as fp:
-            json.dump(match, fp)
-
-        m_cur.close()
-        q_cur.close()
+        start = time.time()
+        print(f'[SQL] Querying {target}')
+        target_sql = f'SELECT t.entry, (t.ontime - q.ontime) AS time FROM ' \
+                     f'(SELECT entry, ontime from train WHERE excerpt = 0) AS t ' \
+                     f'LEFT JOIN (SELECT entry, ontime from {sp} WHERE excerpt = {target} AND ontime > 0 AND ontime < 8) AS q USING(entry) ' \
+                     f'UNION ALL SELECT t.entry, (t.ontime - q.ontime) AS time FROM ' \
+                     f'(SELECT entry, ontime from {sp} WHERE excerpt = {target} AND ontime > 0 AND ontime < 8) AS q ' \
+                     f'LEFT JOIN (SELECT entry, ontime from train WHERE excerpt = 0) AS t USING(entry) WHERE t.entry IS NULL;'
+        l_cur.execute(target_sql)
+        print(f'[SQL] Fetching {target}')
+        trans = l_cur.fetchall()
+        print(f'[SQL] Fetched {target}, len = {len(trans)}')
+        l_cur.execute(f'SELECT entry, ontime from {sp} WHERE excerpt = {target} AND ontime > 0 AND ontime < 8')
+        query_entries = l_cur.fetchall()
+        query = {}
+        for i in query_entries:
+            query[i[0]] = query.get(i[0], 0) + 1
+        print(f'[SIM] Check similarity of {target}')
+        sim = check_similarity(query, trans)
+        # os.system(f'sqlite3 -header -csv ./data/maestro.db "{target_sql}" > ./data/match/{target}.csv')
+        # l_cur.execute(target_sql)
+        # matched = l_cur.fetchall()
+        # with open(f'./data/match/{target}.json', "w") as fp:
+        #     json.dump(matched, fp)
+        end = time.time()
+        print(f'[ELAPSED]\t{sim:.2f}\t{end - start}s')
 
     else:
         print("[ERROR] Invalid model.")
@@ -128,13 +154,20 @@ if __name__ == '__main__':
     parser.add_argument("job", type=str, choices=["build", "match"])
     args = parser.parse_args()
     job_list = []
+    part = 100
     with open("./maestro-v3.0.0/maestro-v3.0.0.json") as json_file:
         maestro = json.load(json_file)
     if args.job == "build":
-        connection = sqlite3.connect("./data/maestro.db")
+        connection = sqlite3.connect(f'./data/maestro-{part}.db')
         cursor = connection.cursor()
+        sp_count = {"train": 0, "validation": 0, "test": 0}
         for split in ["train", "validation", "test"]:
+            if sp_count["train"] > part or \
+                    sp_count["validation"] > int(part / 20) or \
+                    sp_count["validation"] > int(part / 20):
+                break
             cursor.execute(f'CREATE TABLE IF NOT EXISTS {split}(entry INTEGER, ontime REAL, excerpt INTEGER)')
+            sp_count[split] += 1
         connection.commit()
         cursor.close()
         for key, value in maestro["midi_filename"].items():
@@ -144,23 +177,24 @@ if __name__ == '__main__':
                 job_list.append([points, "build", key, maestro["split"][key]])
 
     elif args.job == "match":
-        connection = sqlite3.connect("./data/match.db")
-        cursor = connection.cursor()
+        # connection = sqlite3.connect("./data/match.db")
+        # cursor = connection.cursor()
         for key, value in maestro["split"].items():
             if value in ["validation", "test"]:
                 src = f'{os.path.splitext(maestro["midi_filename"][key])[0]}.json'
                 with open(f'./maestro-v3.0.0/{src}') as json_file:
-                    sql = f'CREATE TABLE IF NOT EXISTS _{key}' \
-                          f'(entry INTEGER, target INTEGER, q_ontime REAL, t_ontime REAL)'
-                    cursor.execute(sql)
+                    # sql = f'CREATE TABLE IF NOT EXISTS _{key}' \
+                    #       f'(entry INTEGER, target INTEGER, q_ontime REAL, t_ontime REAL)'
+                    # cursor.execute(sql)
                     points = json.load(json_file)
                     points = sorted([list(x) for x in set(tuple(x) for x in points)], key=lambda x: (x[0], x[1]))
-                job_list.append([points, "match", key])
-        cursor.execute(f'CREATE TABLE IF NOT EXISTS entry_count(excerpt INTEGER, entry_count INTEGER)')
-        connection.commit()
-        cursor.close()
+                job_list.append([points, "match", key, maestro["split"][key]])
+        # cursor.execute(f'CREATE TABLE IF NOT EXISTS entry_count(excerpt INTEGER, entry_count INTEGER)')
+        # connection.commit()
+        # cursor.close()
 
+    entry(job_list[0][0], job_list[0][1], job_list[0][2], job_list[0][3])
     # for job in job_list:
-    #     entry(job[0], job[1], job[2])
-    with Pool(cpu_count() - 1) as p:
-        p.starmap(entry, job_list)
+    #     entry(job[0], job[1], job[2], job[3])
+    # with Pool(cpu_count() - 1) as p:
+    #     p.starmap(entry, job_list)
