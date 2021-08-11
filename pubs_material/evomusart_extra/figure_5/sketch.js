@@ -1,5 +1,5 @@
 // Export png?
-const exportPng = true
+const exportPng = false
 // Point sets to plot.
 let p1999 = {
     "pointSet": [
@@ -409,11 +409,61 @@ let p1999_entries = "[\n" +
     "\t{entry: -5-2+1.0, triple: [(4, 74), (5, 69), (6, 67)]}\n" +
     "]"
 
+let top10 = "[\n" +
+    "\t{ hash: +05-05+1.1, count: 268027 },\n" +
+    "\t{ hash: +05-05-1.1, count: 264901 },\n" +
+    "\t{ hash: -05+05+1.1, count: 255960 },\n" +
+    "\t{ hash: -05+05-1.1, count: 255934 },\n" +
+    "\t{ hash: +02-02+1.1, count: 254712 },\n" +
+    "\t{ hash: +02-02-1.1, count: 253723 },\n" +
+    "\t{ hash: -02+02+1.1, count: 248714 },\n" +
+    "\t{ hash: -02+02-1.1, count: 246992 },\n" +
+    "\t{ hash: -03+03+1.1, count: 237036 },\n" +
+    "\t{ hash: -03+03-1.1, count: 235844 }\n" +
+    "]"
+let last10 = "[\n" +
+    "\t{ hash: -02+01-4.0, count: 21 },\n" +
+    "\t{ hash: -02+01+4.0, count: 21 },\n" +
+    "\t{ hash: -01+02-4.0, count: 21 },\n" +
+    "\t{ hash: +04-01-4.0, count: 21 },\n" +
+    "\t{ hash: -06+04+4.0, count: 21 },\n" +
+    "\t{ hash: -06-04+4.0, count: 21 },\n" +
+    "\t{ hash: -02+06+4.0, count: 21 },\n" +
+    "\t{ hash: -01-01-4.0, count: 20 },\n" +
+    "\t{ hash: -04-06+4.0, count: 19 },\n" +
+    "\t{ hash: +01+05-4.0, count: 19 }\n" +
+    "]"
+
+// let top10 = "[\n" +
+//     "\t{ hash: '+05-05+1.1', count: 268027 },\n" +
+//     "\t{ hash: '+05-05-1.1', count: 264901 },\n" +
+//     "\t{ hash: '-05+05+1.1', count: 255960 },\n" +
+//     "\t{ hash: '-05+05-1.1', count: 255934 },\n" +
+//     "\t{ hash: '+02-02+1.1', count: 254712 },\n" +
+//     "\t{ hash: '+02-02-1.1', count: 253723 },\n" +
+//     "\t{ hash: '-02+02+1.1', count: 248714 },\n" +
+//     "\t{ hash: '-02+02-1.1', count: 246992 },\n" +
+//     "\t{ hash: '-03+03+1.1', count: 237036 },\n" +
+//     "\t{ hash: '-03+03-1.1', count: 235844 }\n" +
+//     "]"
+// let last10 = "[\n" +
+//     "\t{ hash: '-02+01-4.0', count: 21 },\n" +
+//     "\t{ hash: '-02+01+4.0', count: 21 },\n" +
+//     "\t{ hash: '-01+02-4.0', count: 21 },\n" +
+//     "\t{ hash: '+04-01-4.0', count: 21 },\n" +
+//     "\t{ hash: '-06+04+4.0', count: 21 },\n" +
+//     "\t{ hash: '-06-04+4.0', count: 21 },\n" +
+//     "\t{ hash: '-02+06+4.0', count: 21 },\n" +
+//     "\t{ hash: '-01-01-4.0', count: 20 },\n" +
+//     "\t{ hash: '-04-06+4.0', count: 19 },\n" +
+//     "\t{ hash: '+01+05-4.0', count: 19 }\n" +
+//     "]"
+
 const transVec = [-144, 1]
 // y = 760
 let param = {
-    "cvWidth": 3200,
-    "cvHeight": 1400,
+    "cvWidth": 2000,
+    "cvHeight": 1000,
     "p1999": {
         "x": 1860, "y": 1800, "width": 1000, "height": 1000,
         "notationWidth": 1400,
@@ -502,29 +552,29 @@ function setup() {
     // background(255)
 
     // Add the notation PNG files.
-    let aspectRatio = p1999.notationImg.height / p1999.notationImg.width
-    image(
-        p1999.notationImg, 1630, 80,
-        param.p1999.notationWidth, aspectRatio * param.p1999.notationWidth
-    )
-    aspectRatio = p2322.notationImg.height / p2322.notationImg.width
-    image(
-        p2322.notationImg, 30, 80,
-        param.p2322.notationWidth, aspectRatio * param.p2322.notationWidth
-    )
+    // let aspectRatio = p1999.notationImg.height / p1999.notationImg.width
+    // image(
+    //     p1999.notationImg, 1630, 80,
+    //     param.p1999.notationWidth, aspectRatio * param.p1999.notationWidth
+    // )
+    // aspectRatio = p2322.notationImg.height / p2322.notationImg.width
+    // image(
+    //     p2322.notationImg, 30, 80,
+    //     param.p2322.notationWidth, aspectRatio * param.p2322.notationWidth
+    // )
 
     textSize(50)
-    text(p2322_entries, 150, 800)
-    text(p1999_entries, 1750, 800)
+    text(top10, 150, 150)
+    text(last10, 1250, 150)
     // text(matched_entries, 150, 1450)
 
     push()
     textStyle(BOLD)
-    textSize(80)
-    text("a", 20, 80)
-    text("b", 1620, 80)
-    text("c", 20, 750)
-    text("d", 1620, 750)
+    textSize(50)
+    text("Top 10", 20, 80)
+    text("Last 10", 1120, 80)
+    // text("c", 20, 750)
+    // text("d", 1620, 750)
     // text("e", 20, 1400)
     pop()
 
