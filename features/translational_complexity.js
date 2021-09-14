@@ -1,4 +1,5 @@
 const mu = require("maia-util")
+
 function translational_complexity(P){
   const m = P.length
   let numerator, denominator
