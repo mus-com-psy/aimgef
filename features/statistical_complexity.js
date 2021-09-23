@@ -1,30 +1,8 @@
 const path = require("path");
 const mm = require("maia-markov");
 const fs = require("fs");
-const {exec} = require("child_process");
+const {execSync} = require("child_process");
 
-const mainPaths = {
-  "alex": {
-    "CSSR": path.join(
-      "/Users", "zongyu", "MusicFeatures", "CSSR"
-    ),
-    "midi": path.join(
-      "/Users", "zongyu", "MusicFeatures", "CSSR", "test_midi"
-    ),
-    "outName": "data_10"
-  }
-}
-
-let nextU = false
-let mainPath;
-process.argv.forEach(function (arg, ind) {
-  if (arg === "-u") {
-    nextU = true
-  } else if (nextU) {
-    mainPath = mainPaths[arg]
-    nextU = false
-  }
-})
 
 function getPoints(filename) {
   let points = []
@@ -35,28 +13,31 @@ function getPoints(filename) {
   return points
 }
 
-const files = fs.readdirSync(mainPath["midi"])
-const logger = fs.createWriteStream(path.join(mainPath["CSSR"], mainPath["outName"]), {flags: "a"})
-for (const f of files) {
-  if (f.slice(-4) === ".mid") {
-    const points = getPoints(path.join(mainPath["midi"], f))
-      .slice(0, 400)
-      .map(x => {
-        return String.fromCharCode((x[1] % 12) + 97)
-      })
-    logger.write(points.join("") + "\n")
+function statistical_complexity(mainPath) {
+  const results = {}
+  const files = fs.readdirSync(mainPath["midi"])
+  let content = ""
+  for (const f of files) {
+    if (f.slice(-4) === ".mid") {
+      const points = getPoints(path.join(mainPath.midi, f))
+        .slice(0, 400)
+        .map(x => {
+          return String.fromCharCode((x[1] % 12) + 97)
+        })
+      content += points.join("") + "\n"
+    }
   }
-}
-logger.end()
+  fs.writeFileSync(mainPath.CSSR.data, content)
+  const cmd = `${mainPath.CSSR.executable} ${mainPath.CSSR.alphabet} ${mainPath.CSSR.data} ${mainPath.CSSR.maxlength}`
+  console.log("cmd: ", cmd)
+  execSync(cmd)
 
-// exec(mainPath["CSSR"] + "/CSSR alphabet " + mainPath["outName"] + " 400", (error, stdout, stderr) => {
-//   if (error) {
-//     console.log(`error: ${error.message}`);
-//     return;
-//   }
-//   if (stderr) {
-//     console.log(`stderr: ${stderr}`);
-//     return;
-//   }
-//   console.log(`stdout: ${stdout}`);
-// });
+  const data = fs.readFileSync(mainPath.CSSR.data + "_info", 'utf8').split("\r\n").slice(2, -1)
+  for (const row of data) {
+    const item = row.split(": ")
+    results[item[0]] = item[1]
+  }
+  return results
+}
+
+module.exports = statistical_complexity

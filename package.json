@@ -16,9 +16,10 @@
     "maia-markov": "^0.0.6",
     "maia-util": "^0.2.27",
     "mathjs": "^9.4.2",
+    "minimist": "^1.2.5",
     "nodeplotlib": "^0.6.5",
     "seed-random": "^2.2.0",
-    "uuid": "^3.1.0",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "uuid": "^3.1.0"
   }
 }
