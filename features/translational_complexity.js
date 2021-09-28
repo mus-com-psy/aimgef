@@ -1,6 +1,6 @@
 const mu = require("maia-util")
 
-function translational_complexity(P) {
+module.exports.translational_complexity = function (P) {
   const len = P.length
   // Calculate the difference array, but leave it as a vector.
   const maxVecSize = len * (len - 1) / 2
@@ -27,7 +27,6 @@ function translational_complexity(P) {
   return (uniqueCount[0].length - (len - 1)) / (maxVecSize - (len - 1))
 }
 
-module.exports = translational_complexity
 
 // const ps1 = [[0, 60], [1, 60], [2, 60], [3, 60], [4, 60], [5, 60]]
 // const ans1 = translational_complexity(ps1)
