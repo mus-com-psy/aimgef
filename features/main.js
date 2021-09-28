@@ -31,4 +31,10 @@ let events2 = util.points2events(pts, "mode-2")
 console.log("events with mode-2: ", events2)
 
 
-sc.statistical_complexity(mainPath, ["0", "1"])
+let groups = []
+for (let i = 0; i < 80; i++) {
+  groups.push(i.toString())
+}
+
+const out = sc.statistical_complexity(mainPath, groups)
+console.log(out)

@@ -12,7 +12,7 @@ module.exports.statistical_complexity = function (mainPath, groups) {
     const sequences = []
     let midiFiles = files.filter(f => f.startsWith(group + "-"))
     for (const midiFile of midiFiles) {
-      sequences.push(util.points2events(util.getPoints(mainPath.midi + midiFile)))
+      sequences.push(util.points2events(util.getPoints(mainPath.midi + midiFile, true), "mode-2"))
     }
     let data = sequences.join("\n")
     fs.writeFileSync(mainPath.CSSR.data + `group-${group}`, data)
@@ -30,6 +30,7 @@ module.exports.statistical_complexity = function (mainPath, groups) {
         mainPath.CSSR.futureSize
       ]
     )
-    console.log(stdout.toString())
+    results[group] = parseFloat(stdout.toString().split("\n")[2].split(": ")[1])
   }
+  return results
 }

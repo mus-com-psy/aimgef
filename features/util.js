@@ -17,7 +17,7 @@ function getTimeEvents(time, gran) {
   return results
 }
 
-module.exports.getPoints = function (filename, gran = [0, 0.25, 0.33, 0.5, 0.67, 0.75, 1]) {
+module.exports.getPoints = function (filename, clean = true, gran = [0, 0.25, 0.33, 0.5, 0.67, 0.75, 1]) {
   const results = []
   const co = new mm.MidiImport(filename, gran).compObj
   let points = co.notes.map(n => {
@@ -30,15 +30,19 @@ module.exports.getPoints = function (filename, gran = [0, 0.25, 0.33, 0.5, 0.67,
   }).sort((x, y) => {
     return x[1] - y[1] || x[0] - y[0] || x[2] - y[2]
   })
-  results.push(points[0])
-  let prev = points[0]
-  for (const pt of points.slice(1)) {
-    if (!(pt[1] >= prev[1] && pt[1] < prev[2] && pt[0] === prev[0])) {
-      results.push(pt)
-      prev = pt
+  if (clean) {
+    results.push(points[0])
+    let prev = points[0]
+    for (const pt of points.slice(1)) {
+      if (!(pt[1] >= prev[1] && pt[1] < prev[2] && pt[0] === prev[0])) {
+        results.push(pt)
+        prev = pt
+      }
     }
+    return results
+  } else {
+    return points
   }
-  return results
 }
 
 module.exports.points2events = function (points, mode = "mode-1", gran = {
@@ -52,6 +56,11 @@ module.exports.points2events = function (points, mode = "mode-1", gran = {
 }) {
   let results = ""
   switch (mode) {
+    case "mode-0":
+      for (const pt of points) {
+        results += String.fromCharCode((pt[0] % 12) + 97)
+      }
+      break
     case "mode-1":
       let timestamp = points[0][1]
       for (const pt of points) {
@@ -89,5 +98,6 @@ module.exports.points2events = function (points, mode = "mode-1", gran = {
     default:
       console.log(`Wrong mode (${mode})!`)
   }
+  console.log("Events sequence length: ", results.length)
   return results
 }
