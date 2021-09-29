@@ -1,5 +1,6 @@
 const mm = require("maia-markov")
 const mf = require("maia-features")
+const tone = require("@tonejs/midi")
 
 function getTimeEvents(time, gran) {
   let results = ""

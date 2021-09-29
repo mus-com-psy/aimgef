@@ -5,6 +5,7 @@ const cp = require("child_process");
 const PolynomialRegression = require("ml-regression-polynomial");
 const distributions = require("distributions");
 const {abs, sum, mean} = require("mathjs");
+const {getPoints} = require("./util");
 
 
 function statComp(CSSR, name = 'data') {
@@ -111,10 +112,35 @@ function tonalScore(file) {
   return co.tonal_ambiguity()
 }
 
+function attInterval(file) {
+  const co = util.getCompObj(file, "mf")
+  return co.average_time_between_attacks() // In the unit of beat.
+}
+
+function rhyDis(file, grid=0.25, fineness = 0.01) {
+  // TODO: Tom mentioned his beat tracking method. Or tempo changes, but the method in pretty_midi does not work
+  const ons = getPoints(file, "pitch and ontime", false, undefined).map(n => {
+    return n[1]
+  })
+  const results = {"df": 0, "err": grid}
+  for (let df = 0; df < grid; df += fineness) {
+    const err = mean(ons.map(n => {
+      return n % grid // Distance to the grid lines.
+    }))
+    if (err < results.err) {
+      results.df = df
+      results.err = err
+    }
+  }
+  return results // TODO: It cannot handle when excerpts are supposed to have different tempi in various places.
+}
+
 module.exports = {
   statComp,
   transComp,
   arcScore,
   tonalScore,
+  attInterval,
+  rhyDis,
 }
 

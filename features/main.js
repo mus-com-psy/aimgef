@@ -2,7 +2,7 @@ const feat = require("./features")
 
 const mainPaths = {
   "alex": {
-    "midiFile": "/home/zongyu/Projects/aimgef/features/data/LeeSH01M.mid",
+    "midiFile": "/home/zongyu/Projects/listening study/midi/151.mid",
     "CSSR": {
       "midi": "/home/zongyu/Projects/MusicTransformer-pytorch/generated/",
       "executable": "/home/zongyu/Projects/decisional_states-1.0/examples/SymbolicSeries",
@@ -36,5 +36,8 @@ const mainPath = mainPaths[argv.u];
 // feat.translational_complexity()
 const mf = require("maia-features")
 
-console.log(feat.arcScore(mainPath.midiFile))
-console.log(feat.tonalScore(mainPath.midiFile))
+console.log("arcScore: ", feat.arcScore(mainPath.midiFile))
+console.log("transComp: ", feat.transComp(mainPath.midiFile))
+console.log("tonalScore: ", feat.tonalScore(mainPath.midiFile))
+console.log("attInterval: ", feat.attInterval(mainPath.midiFile))
+console.log("rhyDis: ", feat.rhyDis(mainPath.midiFile))
