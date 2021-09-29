@@ -1,4 +1,5 @@
-const mm = require("maia-markov");
+const mm = require("maia-markov")
+const mf = require("maia-features")
 
 function getTimeEvents(time, gran) {
   let results = ""
@@ -17,8 +18,20 @@ function getTimeEvents(time, gran) {
   return results
 }
 
-module.exports.getPoints = function (filename, clean = true, gran = [0, 0.25, 0.33, 0.5, 0.67, 0.75, 1]) {
-  const results = []
+function getCompObj(file, mode = "mm", gran = [0, 0.25, 0.33, 0.5, 0.67, 0.75, 1]) {
+  const co = new mm.MidiImport(file, gran).compObj
+  switch (mode) {
+    case "mm":
+      return co
+    case "mf":
+      return new mf.CompObj(co)
+  }
+}
+
+function getPoints(filename,
+                   mode,
+                   clean = true,
+                   gran = [0, 0.25, 0.33, 0.5, 0.67, 0.75, 1]) {
   const co = new mm.MidiImport(filename, gran).compObj
   let points = co.notes.map(n => {
     return [n.MNN, n.ontime, n.offtime]
@@ -31,6 +44,7 @@ module.exports.getPoints = function (filename, clean = true, gran = [0, 0.25, 0.
     return x[1] - y[1] || x[0] - y[0] || x[2] - y[2]
   })
   if (clean) {
+    const results = []
     results.push(points[0])
     let prev = points[0]
     for (const pt of points.slice(1)) {
@@ -39,13 +53,28 @@ module.exports.getPoints = function (filename, clean = true, gran = [0, 0.25, 0.
         prev = pt
       }
     }
-    return results
-  } else {
-    return points
+    points = results
   }
+  switch (mode) {
+    case "pitch and ontime":
+      console.log('Getting points in "pitch and ontime" mode.')
+      points = points.map(n => {
+        return [n[0], n[1]]
+      })
+      break
+    case "top notes":
+      console.log('Getting points in "top notes" mode.')
+      points = new mf.CompObj(co, "top new MNN").melodyPoints.map(n => {
+        return [n[1], n[0]]
+      })
+      break
+    default:
+      console.log("Getting points in default mode.")
+  }
+  return points
 }
 
-module.exports.points2events = function (points, mode = "mode-1", gran = {
+function points2events(points, mode = "mode-1", gran = {
   0: "",
   0.25: "1",
   0.33: "2",
@@ -100,4 +129,10 @@ module.exports.points2events = function (points, mode = "mode-1", gran = {
   }
   console.log("Events sequence length: ", results.length)
   return results
+}
+
+module.exports = {
+  getPoints,
+  getCompObj,
+  points2events,
 }
