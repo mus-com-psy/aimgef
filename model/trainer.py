@@ -54,8 +54,8 @@ class Trainer:
             )).open(mode='r') as f:
                 config = yaml.safe_load(f)
         else:
-            self.logdir = (Path.cwd() / "experiment" / "{}/{}/{}".format(model_name, style, current_time)).as_posix()
-            with (Path.cwd() / "model/transformer/config.yaml").open(mode='r') as f:
+            self.logdir = f'./experiment/{model_name}/{style}/{current_time}'
+            with (Path.cwd() / "model/config.yaml").open(mode='r') as f:
                 config = yaml.safe_load(f)
         self.cfg = config[self.model_name]
         train_data = Dataset("train", style, "token", self.cfg[style]["seq_len"])
@@ -97,7 +97,7 @@ class Trainer:
 
     def train(self):
         writer = SummaryWriter(self.logdir)
-        copyfile((Path.cwd() / "model/transformer/config.yaml").as_posix(), "{}/config.yaml".format(self.logdir))
+        copyfile((Path.cwd() / "model/config.yaml").as_posix(), "{}/config.yaml".format(self.logdir))
         prev_valid_loss = 100000
         batch_size = self.cfg["batch_size"]
 
@@ -130,6 +130,12 @@ class Trainer:
                 # writer.add_scalar('TRAIN/ITER/LOSS', loss_norm, self.iteration)
                 # writer.add_scalar('TRAIN/ITER/ACC', acc_norm, self.iteration)
                 self.iteration += 1
+                if (e == 1) and (i in [100, 300, 1000, 5000]):
+                    torch.save({'epoch': e,
+                                'model_state_dict': self.model.state_dict(),
+                                'optimizer_state_dict': self.scheduler.state_dict()},
+                               f'{self.logdir}/model_{e}-{i}.pt')
+
                 if i % 10 == 0:
                     print('Train Epoch: {} [{}/{} ({:.0f}%)]'.format(
                         e,

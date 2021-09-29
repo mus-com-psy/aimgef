@@ -9,7 +9,7 @@ from midi_io import MIDI
 
 
 def get_maestro_midi_list(split):
-    maestro_json = pd.read_json((Path.cwd() / "dataset/maestro-v2.0.0/maestro-v2.0.0.json").as_posix())
+    maestro_json = pd.read_json('./dataset/maestro-v3.0.0/maestro-v3.0.0.json')
     midi_list = maestro_json.loc[maestro_json['split'] == split]['midi_filename'].values.tolist()
     return midi_list
 
@@ -56,7 +56,7 @@ def main(style, representation, length, step_size, time_granularity, ignore_velo
                 file_index = 0
                 midi_list = get_maestro_midi_list(split)
                 for midi in tqdm(midi_list):
-                    mid = MIDI((Path.cwd() / "dataset/maestro-v2.0.0" / midi).as_posix(), decoder="pretty_midi")
+                    mid = MIDI((Path.cwd() / "dataset/maestro-v3.0.0" / midi).as_posix(), decoder="pretty_midi")
                     if mid.num_tracks != 1:
                         continue
                     move = range(-5, 7) if transposition else [0]
