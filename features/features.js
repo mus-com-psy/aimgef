@@ -98,7 +98,7 @@ function arcScore(file) {
   }))
   const v = beta_hat / Math.sqrt(rss / (points.length - 2) / ss_x)
   console.log(v)
-  const t = distributions.Studentt(1000);
+  const t = distributions.Studentt(50);
   console.log(t.cdf(abs(v))) // greater than 0.975
   return t.cdf(abs(v))
 }

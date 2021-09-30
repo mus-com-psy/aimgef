@@ -1,4 +1,8 @@
 import time
+import os
+import errno
+import json
+
 import datetime
 import yaml
 from pathlib import Path
@@ -18,6 +22,15 @@ from .loss import vae_loss, ce_loss
 from .midi_io import MIDI
 
 
+def mkdir(filename):
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+
 def timer(start, end):
     h, re = divmod(end - start, 3600)
     m, s = divmod(re, 60)
@@ -26,7 +39,7 @@ def timer(start, end):
 
 class Trainer:
     def __init__(self, model_name, style, resume):
-        self.start_dist = torch.tensor(
+        self.csq_start_dist = torch.tensor(
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.00024224806,
              0.00024224806, 0.00024224806, 0.00048449612, 0.0007267442, 0.0012112403, 0.0012112403,
@@ -42,20 +55,27 @@ class Trainer:
              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
              0.0, 0.0, 0.0, 0.0]
         )
+        self.cpi_start_dist = torch.tensor(
+            [0.0013410404624277456, 0.0019421965317919076, 0.0024508670520231213, 0.003144508670520231,
+             0.004439306358381503, 0.005734104046242775, 0.011930635838150289, 0.016138728323699423,
+             0.02423121387283237, 0.03408092485549133, 0.04171098265895954, 0.050589595375722544, 0.059838150289017344,
+             0.06113294797687861, 0.0691329479768786, 0.07213872832369943, 0.07764161849710982, 0.07796531791907514,
+             0.07986127167630058, 0.07773410404624277, 0.06363005780346821, 0.0524393063583815, 0.04240462427745665,
+             0.029919075144508672, 0.021040462427745665, 0.010589595375722544, 0.004763005780346821,
+             0.0013410404624277456, 0.0005086705202312139, 0.00018497109826589596, 0.0, 0.0]
+        )
         self.model_name = model_name
         current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
         self.style = style
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.resume = resume
         if resume:
-            self.logdir = (Path.cwd() / "experiment" / "{}/{}/{}".format(model_name, style, resume[1])).as_posix()
-            with (Path.cwd() / "experiment/{}/{}/{}/config.yaml".format(
-                    model_name, style, resume[0]
-            )).open(mode='r') as f:
+            self.logdir = f"./experiment/{model_name}/{style}/{resume[1]}"
+            with open(f"./experiment/{model_name}/{style}/{resume[0]}/config.yaml", 'r') as f:
                 config = yaml.safe_load(f)
         else:
             self.logdir = f'./experiment/{model_name}/{style}/{current_time}'
-            with (Path.cwd() / "model/config.yaml").open(mode='r') as f:
+            with open("./model/config.yaml", 'r') as f:
                 config = yaml.safe_load(f)
         self.cfg = config[self.model_name]
         train_data = Dataset("train", style, "token", self.cfg[style]["seq_len"])
@@ -81,15 +101,13 @@ class Trainer:
 
         if resume:
             self.model.load_state_dict(torch.load(
-                Path.cwd() / "experiment/{}/{}/{}/model_{}.pt".format(
-                    self.model_name, self.style, resume[0], resume[1])
+                f"./experiment/{self.model_name}/{self.style}/{resume[0]}/model_{resume[1]}.pt"
             )["model_state_dict"])
         opt = optim.Adam(self.model.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
         self.scheduler = CustomSchedule(self.cfg["d_model"], 1, 4000, optimizer=opt)
         if resume:
             self.scheduler.load_state_dict(torch.load(
-                Path.cwd() / "experiment/{}/{}/{}/model_{}.pt".format(
-                    self.model_name, self.style, resume[0], resume[1])
+                f"./experiment/{self.model_name}/{self.style}/{resume[0]}/model_{resume[1]}.pt"
             )["optimizer_state_dict"])
         self.start_epoch = 1 if not resume else resume[1] + 1
         self.end_epoch = self.cfg["epoch"] + 1
@@ -97,7 +115,7 @@ class Trainer:
 
     def train(self):
         writer = SummaryWriter(self.logdir)
-        copyfile((Path.cwd() / "model/config.yaml").as_posix(), "{}/config.yaml".format(self.logdir))
+        copyfile("./model/config.yaml", f"{self.logdir}/config.yaml")
         prev_valid_loss = 100000
         batch_size = self.cfg["batch_size"]
 
@@ -149,7 +167,6 @@ class Trainer:
             self.model.eval()
             with torch.no_grad():
                 for i, batch in enumerate(self.valid_loader):
-
                     batch = batch.long().view(batch_size, -1).to(self.device)
                     recon_batch = self.model.forward(batch[:, :-1])
                     loss = ce_loss(recon_batch, batch[:, 1:])
@@ -191,12 +208,13 @@ class Trainer:
         if style == "CPI":
             durations = False
         self.model.eval()
-        num_excerpts = 30
+        num_excerpts = 50
 
         if style == "CSQ":
-            z = Categorical(self.start_dist).sample(sample_shape=[num_excerpts, 1]).to(self.device)
+            z = Categorical(self.csq_start_dist).sample(sample_shape=[num_excerpts, 1]).to(self.device)
         elif style == "CPI":
-            z = torch.randint(low=357, high=389, size=(num_excerpts, 1)).to(self.device)
+            z = (Categorical(self.cpi_start_dist).sample(sample_shape=[num_excerpts, 1]) + 357).to(self.device)
+            # z = torch.randint(low=357, high=389, size=(num_excerpts, 1)).to(self.device)
         else:
             raise ValueError("Invalid style.")
 
@@ -205,10 +223,12 @@ class Trainer:
         for i, output in tqdm(enumerate(outputs)):
             mid = MIDI.to_midi(output.reshape(1, -1), durations)
             # mid = MIDI.to_midi(output, durations)
-            mid.write((Path.cwd() / "experiment/{}/{}/{}/{}.mid".format(self.model_name,
-                                                                        self.style,
-                                                                        self.resume[0],
-                                                                        start_index + i)).as_posix())
+            filename = f"./experiment/{self.model_name}/{self.style}/" + \
+                       f"{self.resume[0]}/{self.resume[1]}/{start_index + i}"
+            mkdir(filename)
+            with open(filename + ".json", 'w') as outfile:
+                json.dump(output.tolist(), outfile)
+            mid.write(filename + ".mid")
 
     def originality(self):
         writer = SummaryWriter(self.logdir)
