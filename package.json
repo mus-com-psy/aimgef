@@ -13,7 +13,7 @@
   "homepage": "https://github.com/mstrcyork/aimgef/",
   "dependencies": {
     "@tonejs/midi": "^2.0.27",
-    "maia-markov": "^0.0.6",
+    "maia-markov": "^0.0.31",
     "maia-util": "^0.2.27",
     "maia-features": "file:./features/maia-features",
     "mathjs": "^9.5.0",

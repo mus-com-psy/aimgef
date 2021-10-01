@@ -6,7 +6,9 @@ node_modules/
 # OS
 .DS_Store
 
-# Audio
+# Music/audio
+*.mid
+*.midi
 *.mp3
 *.m4a
 *.wav
