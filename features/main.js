@@ -91,7 +91,7 @@ function reportMTGenerated() {
       const trans = feat.transComp(path)
       const arc = feat.arcScore(path)
       const tonal = feat.tonalAmb(path)
-      const att = feat.tonalAmb(path)
+      const att = feat.attInterval(path)
       const rhy = feat.rhyDis(path).mean
       transComp.push(trans)
       arcScore.push(arc)
