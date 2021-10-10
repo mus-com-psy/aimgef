@@ -25,6 +25,7 @@ node_modules/
 *.csv
 *.zip
 sub/
+arcreport/
 
 # Logs
 logs
