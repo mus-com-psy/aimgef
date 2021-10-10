@@ -15,10 +15,10 @@ def main(args):
         trainer = Trainer(model_name=args.model, style=args.style, resume=())
         trainer.originality()
     elif args.mode == 'GEN':
-        for i in range(1, 31):
+        for i in ['1-100', '1-300', '1-1000', '1-5000'] + list(range(1, 31)):
             trainer = Trainer(model_name=args.model, style=args.style, resume=(args.src, i))
             # trainer.predict(args.model, args.style, 1024, durations, start_index=i * 30)
-            trainer.predict(args.model, args.style, 1024, durations, start_index=0)
+            trainer.predict(args.model, args.style, 1024, durations, start_index=50)
     elif args.mode == 'CSQ_DATA':
         crawler.main()
 

@@ -4,16 +4,44 @@ const util = require("./util")
 const cp = require("child_process");
 const PolynomialRegression = require("ml-regression-polynomial");
 const distributions = require("distributions");
-const {abs, sum, mean} = require("mathjs");
+const {abs, sum, mean, min, max, variance} = require("mathjs");
 const {getPoints} = require("./util");
+const math = require("mathjs");
 
 
-function statComp(CSSR, name = 'data') {
-  const files = fs.readdirSync(CSSR.midi).filter(f => f.endsWith(".mid"))
+function statComp(CSSR, midiDir, rawData = false, name = 'data') {
+  let files
   const sequences = []
-  for (const file of files) {
-    sequences.push(util.points2events(util.getPoints(CSSR.midi + file, true), "mode-2"))
+  if (rawData) {
+    files = fs.readdirSync(midiDir).filter(f => f.endsWith(".json"))
+    for (const file of files) {
+      let seqStr = ""
+      let seq = require(`${midiDir}/${file}`)
+      for (const s of seq) {
+        if (s === 0) {
+
+        } else if (s >= 1 && s <= 128) {
+          seqStr += String.fromCharCode(((s - 1) % 12) + 97)
+        } else if (s >= 129 && s <= 256) {
+          seqStr += String.fromCharCode(((s - 1) % 12) + 65)
+        } else if (s >= 257 && s <= 356) {
+          seqStr += String.fromCharCode(Math.floor((s - 257) / 10) + 109)
+        } else if (s >= 357 && s <= 388) {
+          seqStr += String.fromCharCode(Math.floor((s - 357) / 4) + 77)
+        } else {
+          console.log("Invalid events index: ", s)
+        }
+      }
+      sequences.push(seqStr)
+    }
+  } else {
+    files = fs.readdirSync(midiDir).filter(f => f.endsWith(".mid"))
+    for (const file of files) {
+      sequences.push(util.points2events(util.getPoints(CSSR.midi + file, true), "mode-2"))
+    }
   }
+
+
   let data = sequences.join("\n")
   fs.writeFileSync(CSSR.data + name, data)
   // let stdout = cp.execFileSync(
@@ -98,7 +126,7 @@ function arcScore(file) {
   }))
   const v = beta_hat / Math.sqrt(rss / (points.length - 2) / ss_x)
   console.log(v)
-  const t = distributions.Studentt(50);
+  const t = distributions.Studentt(points.length - 2);
   console.log(t.cdf(abs(v))) // greater than 0.975
   return t.cdf(abs(v))
 }
@@ -107,7 +135,7 @@ function arcScore(file) {
 // TODO: For arcScore, adjusting degree of freedom does not changing the result value. Also arcScore does not handle when excerpts having multiple arcs.
 // TODO: Adding verbose flag for MidiImport? So to not log timeSigs, fsm and comp.notes.length.
 
-function tonalScore(file) {
+function tonalAmb(file) {
   const co = util.getCompObj(file, "mf")
   return co.tonal_ambiguity()
 }
@@ -117,29 +145,33 @@ function attInterval(file) {
   return co.average_time_between_attacks() // In the unit of beat.
 }
 
-function rhyDis(file, grid=0.25, fineness = 0.01) {
+function rhyDis(file, grid = 0.25) {
   // TODO: Tom mentioned his beat tracking method. Or tempo changes, but the method in pretty_midi does not work
-  const ons = getPoints(file, "pitch and ontime", false, undefined).map(n => {
+  let ons = getPoints(file, "pitch and ontime", false, null).map(n => {
     return n[1]
   })
-  const results = {"df": 0, "err": grid}
-  for (let df = 0; df < grid; df += fineness) {
-    const err = mean(ons.map(n => {
-      return n % grid // Distance to the grid lines.
-    }))
-    if (err < results.err) {
-      results.df = df
-      results.err = err
-    }
-  }
-  return results // TODO: It cannot handle when excerpts are supposed to have different tempi in various places.
+  const head = ons[0]
+  ons = ons.map(n => {
+    return n - head
+  })
+  let err = ons.map(n => {
+    return min(abs(n - math.floor(n / grid) * grid), abs(n - math.ceil(n / grid) * grid)) / 0.125
+  })
+
+  return {
+    'array': err,
+    'mean': mean(err),
+    'variance': variance(err),
+    'min': min(err),
+    'max': max(err)
+  } // TODO: It cannot handle when excerpts are supposed to have different tempi in various places.
 }
 
 module.exports = {
   statComp,
   transComp,
   arcScore,
-  tonalScore,
+  tonalAmb,
   attInterval,
   rhyDis,
 }
