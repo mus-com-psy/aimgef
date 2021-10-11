@@ -8,6 +8,9 @@ plot(ontime, pitch, pch=16)
 lm1 <- lm(formula = pitch ~ ontime + ontime2, data = xy.data)
 summary(lm1)
 
+mse <- mean(resid(lm1)^2)
+
+
 # The value of interest here is -0.018300.
 # It's signifixant (see *** in final column), but not the value you got in Node.js it would seem...
 
