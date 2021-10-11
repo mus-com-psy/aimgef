@@ -109,7 +109,7 @@ class Trainer:
             self.scheduler.load_state_dict(torch.load(
                 f"./experiment/{self.model_name}/{self.style}/{resume[0]}/model_{resume[1]}.pt"
             )["optimizer_state_dict"])
-        self.start_epoch = 1 if not resume else resume[1] + 1
+        # self.start_epoch = 1 if not resume else resume[1] + 1
         self.end_epoch = self.cfg["epoch"] + 1
         self.iteration = 0
 
