@@ -145,7 +145,13 @@ function reportMTGenerated() {
     .then(() => console.log('The CSV file was written successfully.'));
 }
 
-function report() {
+function reportRatings() {
+  const rows = fs.readFileSync('./ratings.csv').toString().split('\r\n').slice(1).map(n => {
+    return n.split(',')
+  }).map(n => {
+    const name = n[4]
+
+  })
   console.log("statComp: ", feat.statComp(mainPath.CSSR, mainPath.midiDir, true))
   console.log("transComp: ", feat.transComp(mainPath.midiFile))
   console.log("arcScore: ", feat.arcScore(mainPath.midiFile))
@@ -154,4 +160,5 @@ function report() {
   console.log("rhyDis: ", feat.rhyDis(mainPath.midiFile))
 }
 
-reportMTGenerated()
+// reportMTGenerated()
+reportRatings()
