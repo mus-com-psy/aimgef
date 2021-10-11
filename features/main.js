@@ -5,7 +5,7 @@ const {mean, min, max, variance} = require("mathjs");
 const mainPaths = {
   "alex": {
     "midiFile": "/home/zongyu/Projects/listening study/midi/151.mid",
-    "midiDir": "/home/zongyu/Projects/MT-generated/1/",
+    "midiDir": "/home/zongyu/Projects/listening study/midi/",
     "MTDir": "/home/zongyu/Projects/MT-generated/",
     "CSSR": {
       "executable": "/home/zongyu/Projects/decisional_states-1.0/examples/SymbolicSeries",
@@ -148,16 +148,33 @@ function reportMTGenerated() {
 function reportRatings() {
   const rows = fs.readFileSync('./ratings.csv').toString().split('\r\n').slice(1).map(n => {
     return n.split(',')
-  }).map(n => {
-    const name = n[4]
-
   })
-  console.log("statComp: ", feat.statComp(mainPath.CSSR, mainPath.midiDir, true))
-  console.log("transComp: ", feat.transComp(mainPath.midiFile))
-  console.log("arcScore: ", feat.arcScore(mainPath.midiFile))
-  console.log("tonalAmb: ", feat.tonalAmb(mainPath.midiFile))
-  console.log("attInterval: ", feat.attInterval(mainPath.midiFile))
-  console.log("rhyDis: ", feat.rhyDis(mainPath.midiFile))
+  for (const i in rows) {
+    try {
+      const featScores = []
+      const midiPath = mainPath.midiDir + rows[i][4] + '.mid'
+      featScores.push(feat.transComp(midiPath))
+      featScores.push(feat.arcScore(midiPath))
+      featScores.push(feat.tonalAmb(midiPath))
+      featScores.push(feat.attInterval(midiPath))
+      featScores.push(feat.rhyDis(midiPath).mean)
+      rows[i] = rows[i].concat(featScores)
+    } catch (e) {
+      console.log("Reading midi file failed.")
+    }
+  }
+  const header = ["Rating", "Category", "Aspect", "Part", "Name", "transComp", "arcScore", "tonalAmb", "attInterval", "rhyDis"]
+  const writeStream = fs.createWriteStream('LSRatings.csv');
+  writeStream.write(header.join(',') + '\n')
+  for (const row of rows) {
+    writeStream.write(row.join(',') + '\n')
+  }
+  // console.log("statComp: ", feat.statComp(mainPath.CSSR, mainPath.midiDir, true))
+  // console.log("transComp: ", feat.transComp(mainPath.midiFile))
+  // console.log("arcScore: ", feat.arcScore(mainPath.midiFile))
+  // console.log("tonalAmb: ", feat.tonalAmb(mainPath.midiFile))
+  // console.log("attInterval: ", feat.attInterval(mainPath.midiFile))
+  // console.log("rhyDis: ", feat.rhyDis(mainPath.midiFile))
 }
 
 // reportMTGenerated()
