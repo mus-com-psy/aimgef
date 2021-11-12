@@ -4,8 +4,8 @@ const {mean, min, max, variance} = require("mathjs");
 
 const mainPaths = {
   "alex": {
-    "midiFile": "/home/zongyu/Projects/listening study/midi/151.mid",
-    "midiDir": "/home/zongyu/Projects/listening study/midi/",
+    "midiFile": "/home/zongyu/Projects/listening_study/midi/151.mid",
+    "midiDir": "/home/zongyu/Projects/listening_study/midi/",
     "MTDir": "/home/zongyu/Projects/MT-generated/",
     "CSSR": {
       "executable": "/home/zongyu/Projects/decisional_states-1.0/examples/SymbolicSeries",
@@ -158,6 +158,7 @@ function reportRatings() {
       featScores.push(feat.tonalAmb(midiPath))
       featScores.push(feat.attInterval(midiPath))
       featScores.push(feat.rhyDis(midiPath).mean)
+      featScores.push(feat.IOI(midiPath))
       rows[i] = rows[i].concat(featScores)
     } catch (e) {
       console.log("Reading midi file failed.")

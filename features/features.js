@@ -146,6 +146,7 @@ function attInterval(file) {
 }
 
 function rhyDis(file, grid = 0.25) {
+  // Expressivity
   // TODO: Tom mentioned his beat tracking method. Or tempo changes, but the method in pretty_midi does not work
   let ons = getPoints(file, "pitch and ontime", false, null).map(n => {
     return n[1]
@@ -167,6 +168,34 @@ function rhyDis(file, grid = 0.25) {
   } // TODO: It cannot handle when excerpts are supposed to have different tempi in various places.
 }
 
+function finDiff(arr, absDiff = true) {
+  const res = []
+  let pre = arr[0]
+  for (const x of arr.slice(1)) {
+    res.push(absDiff ? abs(x - pre) : x - pre)
+    pre = x
+  }
+  return res
+}
+
+function IOI(file) {
+  let ons = getPoints(file, "pitch and ontime", false, null).map(n => {
+    return n[1]
+  })
+  const firstIOI = finDiff(ons)
+  const secondIOI = finDiff(firstIOI)
+  return {
+    "firstIOI": {
+      "mean": mean(firstIOI),
+      "variance": variance(firstIOI)
+    },
+    "secondIOI": {
+      "mean": mean(secondIOI),
+      "variance": variance(secondIOI)
+    }
+  }
+}
+
 module.exports = {
   statComp,
   transComp,
@@ -174,5 +203,56 @@ module.exports = {
   tonalAmb,
   attInterval,
   rhyDis,
+  IOI,
 }
 
+const arr1 = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+const arr2 = [2, 3, 5, 6, 2, 3, 5, 6, 2, 3, 5, 6]
+const arr3 = [2, 2, 2, 3, 3, 3, 5, 5, 5, 6, 6, 6]
+const arr4 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+console.log("arr1:",
+  {
+    "firstIOI": {
+      "mean": mean(arr1),
+      "variance": variance(arr1)
+    },
+    "secondIOI": {
+      "mean": mean(finDiff(arr1)),
+      "variance": variance(finDiff(arr1))
+    }
+  })
+console.log("arr2:",
+  {
+    "firstIOI": {
+      "mean": mean(arr2),
+      "variance": variance(arr2)
+    },
+    "secondIOI": {
+      "mean": mean(finDiff(arr2)),
+      "variance": variance(finDiff(arr2))
+    }
+  })
+console.log("arr3:",
+  {
+    "firstIOI": {
+      "mean": mean(arr3),
+      "variance": variance(arr3)
+    },
+    "secondIOI": {
+      "mean": mean(finDiff(arr3)),
+      "variance": variance(finDiff(arr3))
+    }
+  })
+
+console.log("arr4:",
+  {
+    "firstIOI": {
+      "mean": mean(arr4),
+      "variance": variance(arr4)
+    },
+    "secondIOI": {
+      "mean": mean(finDiff(arr4)),
+      "variance": variance(finDiff(arr4))
+    }
+  })
