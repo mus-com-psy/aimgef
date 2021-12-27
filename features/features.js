@@ -205,7 +205,6 @@ module.exports = {
   rhyDis,
   IOI,
 }
-
 const arr1 = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
 const arr2 = [2, 3, 5, 6, 2, 3, 5, 6, 2, 3, 5, 6]
 const arr3 = [2, 2, 2, 3, 3, 3, 5, 5, 5, 6, 6, 6]

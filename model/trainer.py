@@ -18,7 +18,7 @@ from torch.distributions import Categorical
 from .transformer import Transformer
 from .optimizer import CustomSchedule
 from .data import Dataset
-from .loss import vae_loss, ce_loss
+from .loss import vae_loss, ce_loss, SmoothCrossEntropyLoss
 from .midi_io import MIDI
 
 
@@ -112,6 +112,7 @@ class Trainer:
         # self.start_epoch = 1 if not resume else resume[1] + 1
         self.end_epoch = self.cfg["epoch"] + 1
         self.iteration = 0
+        self.loss = SmoothCrossEntropyLoss(0.1, self.cfg[style]["vocab_size"])
 
     def train(self):
         writer = SummaryWriter(self.logdir)
@@ -133,7 +134,7 @@ class Trainer:
                 recon_batch = self.model.forward(batch[:, :-1])
                 output_ce = 0
                 output_kld = 0
-                loss = ce_loss(recon_batch, batch[:, 1:])
+                loss = self.loss(recon_batch.transpose(1, 2), batch[:, 1:])
 
                 self.scheduler.optimizer.zero_grad()
                 loss.backward()
@@ -148,11 +149,11 @@ class Trainer:
                 # writer.add_scalar('TRAIN/ITER/LOSS', loss_norm, self.iteration)
                 # writer.add_scalar('TRAIN/ITER/ACC', acc_norm, self.iteration)
                 self.iteration += 1
-                if (e == 1) and (i in [100, 300, 1000, 5000]):
-                    torch.save({'epoch': e,
-                                'model_state_dict': self.model.state_dict(),
-                                'optimizer_state_dict': self.scheduler.state_dict()},
-                               f'{self.logdir}/model_{e}-{i}.pt')
+                # if (e == 1) and (i in [100, 300, 1000, 5000]):
+                #     torch.save({'epoch': e,
+                #                 'model_state_dict': self.model.state_dict(),
+                #                 'optimizer_state_dict': self.scheduler.state_dict()},
+                #                f'{self.logdir}/model_{e}-{i}.pt')
 
                 if i % 10 == 0:
                     print('Train Epoch: {} [{}/{} ({:.0f}%)]'.format(
@@ -169,7 +170,7 @@ class Trainer:
                 for i, batch in enumerate(self.valid_loader):
                     batch = batch.long().view(batch_size, -1).to(self.device)
                     recon_batch = self.model.forward(batch[:, :-1])
-                    loss = ce_loss(recon_batch, batch[:, 1:])
+                    loss = self.loss(recon_batch.transpose(1, 2), batch[:, 1:])
 
                     norm = (batch != 0).sum().item()
                     loss_norm = loss.item() / norm
