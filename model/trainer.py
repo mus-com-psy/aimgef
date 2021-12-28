@@ -15,6 +15,7 @@ from torch.utils import data
 from torch.utils.tensorboard import SummaryWriter
 from torch.distributions import Categorical
 
+from .vae import VAE
 from .transformer import Transformer
 from .optimizer import CustomSchedule
 from .data import Dataset
@@ -90,14 +91,23 @@ class Trainer:
                                             shuffle=True,
                                             pin_memory=True,
                                             num_workers=8)
-
-        self.model = Transformer(vocab=self.cfg[style]["vocab_size"],
-                                 n_layer=self.cfg["n_layer"],
-                                 n_head=self.cfg["n_head"],
-                                 d_model=self.cfg["d_model"],
-                                 d_head=self.cfg["d_head"],
-                                 d_inner=self.cfg["d_inner"],
-                                 dropout=self.cfg["dropout"]).to(self.device)
+        if self.model_name == "VAE":
+            self.model = VAE(input_size=self.cfg["input_size"],
+                             hidden_size=self.cfg["hidden_size"],
+                             encoder_num_layers=self.cfg["encoder_num_layers"],
+                             conductor_num_layers=self.cfg["conductor_num_layers"],
+                             decoder_num_layers=self.cfg["decoder_num_layers"],
+                             dropout=self.cfg["dropout"],
+                             vocab_size=self.cfg[style]["vocab_size"],
+                             num_tracks=self.cfg[style]["num_tracks"]).to(self.device)
+        elif self.model_name == "Transformer":
+            self.model = Transformer(vocab=self.cfg[style]["vocab_size"],
+                                     n_layer=self.cfg["n_layer"],
+                                     n_head=self.cfg["n_head"],
+                                     d_model=self.cfg["d_model"],
+                                     d_head=self.cfg["d_head"],
+                                     d_inner=self.cfg["d_inner"],
+                                     dropout=self.cfg["dropout"]).to(self.device)
 
         if resume:
             self.model.load_state_dict(torch.load(
@@ -109,10 +119,10 @@ class Trainer:
             self.scheduler.load_state_dict(torch.load(
                 f"./experiment/{self.model_name}/{self.style}/{resume[0]}/model_{resume[1]}.pt"
             )["optimizer_state_dict"])
-        # self.start_epoch = 1 if not resume else resume[1] + 1
+        self.start_epoch = 1 if not resume else resume[1] + 1
         self.end_epoch = self.cfg["epoch"] + 1
         self.iteration = 0
-        self.loss = SmoothCrossEntropyLoss(0.1, self.cfg[style]["vocab_size"])
+        self.sce_loss = SmoothCrossEntropyLoss(0.1, self.cfg[style]["vocab_size"])
 
     def train(self):
         writer = SummaryWriter(self.logdir)
@@ -120,21 +130,36 @@ class Trainer:
         prev_valid_loss = 100000
         batch_size = self.cfg["batch_size"]
 
+        kld_weight = 0
+        warmup_epoch = self.cfg["warmup_epoch"] if self.model_name == "VAE" else 0
+        warmup_rate = self.cfg["warmup_rate"] if self.model_name == "VAE" else 0
+
         for e in range(self.start_epoch, self.end_epoch):
             train_loss = 0
             train_acc = 0
             valid_loss = 0
             valid_acc = 0
             start_time = time.time()
-
+            if e > warmup_epoch:
+                kld_weight += warmup_rate
             for i, batch in enumerate(self.train_loader):
                 self.model.train()
-
-                batch = batch.long().view(batch_size, -1).to(self.device)
-                recon_batch = self.model.forward(batch[:, :-1])
-                output_ce = 0
-                output_kld = 0
-                loss = self.loss(recon_batch.transpose(1, 2), batch[:, 1:])
+                if self.model_name == "VAE":
+                    batch = batch.long().view(batch_size, self.cfg[self.style]["num_tracks"], -1).to(self.device)
+                    recon_batch, output_mu, output_log_var = self.model.forward(batch)
+                    output_ce, output_kld = vae_loss(recon_batch,
+                                                     batch,
+                                                     output_mu,
+                                                     output_log_var)
+                    loss = output_ce + kld_weight * output_kld
+                elif self.model_name == "Transformer":
+                    batch = batch.long().view(batch_size, -1).to(self.device)
+                    recon_batch = self.model.forward(batch[:, :-1])
+                    output_ce = 0
+                    output_kld = 0
+                    loss = self.sce_loss(recon_batch.transpose(1, 2), batch[:, 1:])
+                else:
+                    raise ValueError("Invalid model name.")
 
                 self.scheduler.optimizer.zero_grad()
                 loss.backward()
@@ -142,12 +167,15 @@ class Trainer:
                 norm = (batch != 0).sum().item()
                 loss_norm = loss.item() / norm
                 train_loss += loss_norm
-
-                acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
-
+                if self.model_name == "VAE":
+                    acc_norm = torch.eq(recon_batch.max(1)[1], batch).sum().item() / norm * 100.
+                elif self.model_name == "Transformer":
+                    acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
+                else:
+                    raise ValueError("Invalid model name.")
                 train_acc += acc_norm
-                # writer.add_scalar('TRAIN/ITER/LOSS', loss_norm, self.iteration)
-                # writer.add_scalar('TRAIN/ITER/ACC', acc_norm, self.iteration)
+                writer.add_scalar('TRAIN/ITER/LOSS', loss_norm, self.iteration)
+                writer.add_scalar('TRAIN/ITER/ACC', acc_norm, self.iteration)
                 self.iteration += 1
                 # if (e == 1) and (i in [100, 300, 1000, 5000]):
                 #     torch.save({'epoch': e,
@@ -156,29 +184,42 @@ class Trainer:
                 #                f'{self.logdir}/model_{e}-{i}.pt')
 
                 if i % 10 == 0:
-                    print('Train Epoch: {} [{}/{} ({:.0f}%)]'.format(
-                        e,
-                        i * batch_size,
-                        len(self.train_loader.dataset),
-                        100. * i / len(self.train_loader)))
+                    print(f'Train Epoch: {e} [{i * batch_size}/{len(self.train_loader.dataset)} ' +
+                          f'({100. * i / len(self.train_loader):.0f}%)]')
 
-                    print('\t\t\tACC: {:.2f}\tLOSS: {:.6f}'.format(
-                        acc_norm,
-                        loss_norm))
+                    if self.model_name == "VAE":
+                        print(f'\t\t\tACC: {acc_norm:.2f}\tLOSS: {loss_norm:.6f}' +
+                              f'\tCE: {output_ce.item() / norm:.6f}\tKLD: {output_kld.item() / norm:.6f}')
+                    elif self.model_name == "Transformer":
+                        print(f'\t\t\tACC: {acc_norm:.2f}\tLOSS: {loss_norm:.6f}')
             self.model.eval()
             with torch.no_grad():
                 for i, batch in enumerate(self.valid_loader):
-                    batch = batch.long().view(batch_size, -1).to(self.device)
-                    recon_batch = self.model.forward(batch[:, :-1])
-                    loss = self.loss(recon_batch.transpose(1, 2), batch[:, 1:])
-
+                    if self.model_name == "VAE":
+                        batch = batch.long().view(batch_size, self.cfg[self.style]["num_tracks"], -1).to(self.device)
+                        recon_batch, output_mu, output_log_var = self.model.forward(batch)
+                        output_ce, output_kld = vae_loss(recon_batch,
+                                                         batch,
+                                                         output_mu,
+                                                         output_log_var)
+                        loss = output_ce + kld_weight * output_kld
+                    elif self.model_name == "Transformer":
+                        batch = batch.long().view(batch_size, -1).to(self.device)
+                        recon_batch = self.model.forward(batch[:, :-1])
+                        loss = self.sce_loss(recon_batch.transpose(1, 2), batch[:, 1:])
+                    else:
+                        raise ValueError("Invalid model name.")
                     norm = (batch != 0).sum().item()
                     loss_norm = loss.item() / norm
                     valid_loss += loss_norm
-
-                    acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
-
+                    if self.model_name == "VAE":
+                        acc_norm = torch.eq(recon_batch.max(1)[1], batch).sum().item() / norm * 100.
+                    elif self.model_name == "Transformer":
+                        acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
+                    else:
+                        raise ValueError("Invalid model name.")
                     valid_acc += acc_norm
+
             average_train_loss = train_loss / len(self.train_loader)
             average_valid_loss = valid_loss / len(self.valid_loader)
             average_train_acc = train_acc / len(self.train_loader)
