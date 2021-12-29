@@ -20,6 +20,7 @@ class MusicBox:
                 "time": list(range(257, 257 + len(self._time_set) - 1)),
                 "vel": list(range(257 + len(self._time_set) - 1, 257 + len(self._time_set) - 1 + 32))
             }
+            self.num_tracks = len(self._midi.instruments)
         if audio_filename:
             self._audio = torchaudio.load(audio_filename)
 
@@ -58,22 +59,22 @@ class MusicBox:
             start_idx += stride
         return output
 
-    def get_events(self, vel=True):
+    def get_events(self, vel=True, aug_pitch=0, aug_time=1.0):
         notes = []
         for i, track in enumerate(self._midi.instruments):
             for note in track.notes:
                 notes.append({
                     "track": i,
                     "act": "on",
-                    "pitch": note.pitch,
-                    "time": note.start,
+                    "pitch": note.pitch + aug_pitch,
+                    "time": note.start * aug_time,
                     "vel": note.velocity
                 })
                 notes.append({
                     "track": i,
                     "act": "off",
-                    "pitch": note.pitch,
-                    "time": note.end,
+                    "pitch": note.pitch + aug_pitch,
+                    "time": note.end * aug_time,
                     "vel": note.velocity
                 })
         notes.sort(key=lambda x: (x["time"], x["pitch"]))

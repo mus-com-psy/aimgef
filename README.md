@@ -22,9 +22,36 @@ Please find the following procedures for reproducing the results stated in:
 - [A Good Algorithm Does Not Steal - It Imitates](#a-good-algorithm-does-not-steal---it-imitates)
 
 ## Deep Learning's Shallow Gains
+### Data preprocess
+- CSQ: `python main.py --mode CSQ_DATA`
+- CPI: `python main.py --mode CPI_DATA`
+ 
+([MAESTRO](https://magenta.tensorflow.org/datasets/maestro) dataset need to be manually downloaded and placed under 'dataset' folder)
 
+### Model training
+- Reimplementation: `python main.py --model "model" --style "style" --mode TRAIN`
+  - `"model"`: `Transformer`, `VAE`
+  - `"style"`: `CSQ`, `CPI`
+- MAIA Markov: check [installation guide](https://www.npmjs.com/package/maia-markov)
+- Coupled recurrent model: check [authors' repository](https://github.com/jthickstun/ismir2019coupled)
 
+### Excerpts generation
+`python main.py --model "model" --style "style" --mode GEN --src "checkpoint" --epoch "epoch"`
+- `"checkpoint"` is automatically generated during training, named by datetime (e.g., 20201113-182345)
+- `"epoch"` is the epoch number (e.g., 10)
 
+### Stimuli
+The generated stimuli used in the listening study can be found [here](https://github.com/mstrcyork/aimgef-assets) with the corresponding "index"(.midi) indicating category:
+
+| |CSQ|CPI|
+|:-|:-|:-|
+|Orig|1-25|151-175|
+|MuTr|101-125|201-225|
+|MVAE|76-100|176-200|
+|MaMa|26-50|-|
+|CoRe|51-75|-|
+|BeAf|126-150|-|
+|LiTr|-|226-250|
 
 ## A Good Algorithm Does Not Steal - It Imitates
 ### Model training and excerpts generation

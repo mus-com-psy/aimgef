@@ -1,5 +1,6 @@
 import argparse
 from model.trainer import Trainer
+from model.preprocess import preprocess
 import model.utilities.crawler as crawler
 
 
@@ -21,6 +22,9 @@ def main(args):
             trainer.predict(args.model, args.style, 1024, durations, start_index=50)
     elif args.mode == 'CSQ_DATA':
         crawler.main()
+        preprocess(style='CSQ', representation='token', aug=True)
+    elif args.mode == 'CPI_DATA':
+        preprocess(style='CPI', representation='token', aug=True)
 
 
 if __name__ == '__main__':

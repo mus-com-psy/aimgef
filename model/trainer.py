@@ -140,7 +140,7 @@ class Trainer:
             valid_loss = 0
             valid_acc = 0
             start_time = time.time()
-            if e > warmup_epoch:
+            if e > warmup_epoch and kld_weight <= 0.2:
                 kld_weight += warmup_rate
             for i, batch in enumerate(self.train_loader):
                 self.model.train()

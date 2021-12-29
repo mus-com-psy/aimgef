@@ -1,6 +1,7 @@
 import os
+import random
+
 import numpy as np
-from pathlib import Path
 from torch.utils import data
 
 
@@ -9,7 +10,8 @@ class Dataset(data.Dataset):
         if split not in ['train', 'validation', 'test']:
             raise ValueError('Invalid partition.')
         self.split = split
-        self.path = f'./dataset/{style}/{representation}/{length}'
+        self.length = length
+        self.path = f'./dataset/{style}/{representation}'
         self.len = sum([len(files) for r, d, files in os.walk(os.path.join(self.path, split))])
         print(f'Loading dataset: {style} - {split} - {length}\n\tSize: {self.len}')
 
@@ -18,4 +20,5 @@ class Dataset(data.Dataset):
 
     def __getitem__(self, index):
         array = np.load(f'{self.path}/{self.split}/{index // 1000}/{index}.npy')
-        return array
+        i = random.randint(0, array.shape[0] - self.length)
+        return array[i:i + self.length]

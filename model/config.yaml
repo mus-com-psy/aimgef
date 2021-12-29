@@ -1,4 +1,24 @@
 ---
+VAE:
+  epoch: 100
+  warmup_epoch: 20
+  warmup_rate: 0.1
+  batch_size: 4
+  input_size: 512
+  hidden_size: 1024
+  encoder_num_layers: 2
+  conductor_num_layers: 2
+  decoder_num_layers: 2
+  dropout: 0.1
+  CSQ:
+    vocab_size: 270
+    seq_len: 2048
+    num_tracks: 4
+  CPI:
+    vocab_size: 389
+    seq_len: 2048
+    num_tracks: 4
+
 Transformer:
   epoch: 100
   batch_size: 2

@@ -5,9 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
-from .attention import AttentionLayer
-from .attention import PositionalEmbedding
-from .attention import Embedding
+from .layer.attention import AttentionLayer
+from .layer.attention import PositionalEmbedding
+from .layer.attention import Embedding
 
 
 class Transformer(nn.Module):
