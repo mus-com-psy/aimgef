@@ -4,6 +4,7 @@ VAE:
   warmup_epoch: 20
   warmup_rate: 0.1
   batch_size: 4
+  d_model: 2048
   input_size: 512
   hidden_size: 1024
   encoder_num_layers: 2

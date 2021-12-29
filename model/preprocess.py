@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from utilities.file_io import MusicBox
+from model.utilities.file_io import MusicBox
 
 
 def mkdir(filename):

@@ -5,7 +5,10 @@ import model.utilities.crawler as crawler
 
 
 def main(args):
-    durations = [0, 1 / 32, 1 / 16, 1 / 12, 1 / 8, 1 / 6, 3 / 16, 1 / 4, 1 / 3, 3 / 8, 1 / 2, 2 / 3, 3 / 4, 1]
+    if args.style == "CSQ":
+        durations = [0, 1 / 32, 1 / 16, 1 / 12, 1 / 8, 1 / 6, 3 / 16, 1 / 4, 1 / 3, 3 / 8, 1 / 2, 2 / 3, 3 / 4, 1]
+    else:
+        durations = False
     if args.mode == 'TRAIN':
         trainer = Trainer(model_name=args.model, style=args.style, resume=())
         trainer.train()
@@ -16,10 +19,10 @@ def main(args):
         trainer = Trainer(model_name=args.model, style=args.style, resume=())
         trainer.originality()
     elif args.mode == 'GEN':
-        for i in ['1-100', '1-300', '1-1000', '1-5000'] + list(range(1, 31)):
-            trainer = Trainer(model_name=args.model, style=args.style, resume=(args.src, i))
-            # trainer.predict(args.model, args.style, 1024, durations, start_index=i * 30)
-            trainer.predict(args.model, args.style, 1024, durations, start_index=50)
+        # for i in ['1-100', '1-300', '1-1000', '1-5000'] + list(range(1, 31)):
+        trainer = Trainer(model_name=args.model, style=args.style, resume=(args.src, args.epoch))
+        trainer.predict(args.model, args.style, 1024, durations, start_index=0)
+            # trainer.predict(args.model, args.style, 1024, durations, start_index=50)
     elif args.mode == 'CSQ_DATA':
         crawler.main()
         preprocess(style='CSQ', representation='token', aug=True)
