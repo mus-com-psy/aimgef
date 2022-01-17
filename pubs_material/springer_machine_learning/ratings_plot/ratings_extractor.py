@@ -27,16 +27,12 @@ def categorise(x):
 
 
 def get_ratings(split=True):
-    trust = [10020, 10021, 10023, 10027, 10028, 10029, 10030, 10031, 10033, 10035, 10037, 10039, 10041, 10043,
-             10045, 10046, 10049, 10050, 10051, 10053, 10056, 10057, 10059, 10060, 10063, 10065, 10068, 10070,
-             10071, 10072, 10073, 10074, 10075, 10077, 10082, 10083, 10087, 10088, 10089, 10091, 10095]
-    submissions = pd.read_csv("submission.csv", sep="\t")
-    submissions = submissions.loc[submissions["participant_id"].isin(trust)]
+    ratings = pd.read_csv("../../../aimgef-assets/ratings.csv", sep=",")
 
     if split:
         result = {"csq_ss": [], "csq_ap": [], "csq_re": [], "csq_me": [], "csq_ha": [], "csq_rh": [],
                   "cpi_ss": [], "cpi_ap": [], "cpi_re": [], "cpi_me": [], "cpi_ha": [], "cpi_rh": []}
-        for row in submissions.iterrows():
+        for row in ratings.iterrows():
             row = row[1]
             if categorise(row["excerpt_id"])[0] == "csq":
                 result["csq_ss"].append([row["a_rating"], categorise(row["excerpt_id"])[1]])
@@ -61,7 +57,7 @@ def get_ratings(split=True):
     else:
         # result = {"csq": [], "cpi": []}
         result = []
-        for row in submissions.iterrows():
+        for row in ratings.iterrows():
             row = row[1]
             # result[categorise(row["excerpt_id"])[0]].append([row["a_rating"], categorise(row["excerpt_id"])[1], "Ss"])
             # result[categorise(row["excerpt_id"])[0]].append([row["b_rating"], categorise(row["excerpt_id"])[1], "Ap"])
@@ -69,13 +65,13 @@ def get_ratings(split=True):
             # result[categorise(row["excerpt_id"])[0]].append([row["d_rating"], categorise(row["excerpt_id"])[1], "Me"])
             # result[categorise(row["excerpt_id"])[0]].append([row["e_rating"], categorise(row["excerpt_id"])[1], "Ha"])
             # result[categorise(row["excerpt_id"])[0]].append([row["f_rating"], categorise(row["excerpt_id"])[1], "Rh"])
-            result.append([row["a_rating"], categorise(row["excerpt_id"])[1], "Ss", categorise(row["excerpt_id"])[0]])
-            result.append([row["b_rating"], categorise(row["excerpt_id"])[1], "Ap", categorise(row["excerpt_id"])[0]])
-            result.append([row["c_rating"], categorise(row["excerpt_id"])[1], "Re", categorise(row["excerpt_id"])[0]])
-            result.append([row["d_rating"], categorise(row["excerpt_id"])[1], "Me", categorise(row["excerpt_id"])[0]])
-            result.append([row["e_rating"], categorise(row["excerpt_id"])[1], "Ha", categorise(row["excerpt_id"])[0]])
-            result.append([row["f_rating"], categorise(row["excerpt_id"])[1], "Rh", categorise(row["excerpt_id"])[0]])
-        pd.DataFrame(result, columns=["Rating", "Category", "Aspect", "Part"]).to_csv("all.csv", index=False)
+            result.append([row["id"], row["ss"], categorise(row["id"])[1], "Ss", categorise(row["id"])[0]])
+            result.append([row["id"], row["ap"], categorise(row["id"])[1], "Ap", categorise(row["id"])[0]])
+            result.append([row["id"], row["re"], categorise(row["id"])[1], "Re", categorise(row["id"])[0]])
+            result.append([row["id"], row["me"], categorise(row["id"])[1], "Me", categorise(row["id"])[0]])
+            result.append([row["id"], row["ha"], categorise(row["id"])[1], "Ha", categorise(row["id"])[0]])
+            result.append([row["id"], row["rh"], categorise(row["id"])[1], "Rh", categorise(row["id"])[0]])
+        pd.DataFrame(result, columns=["ID", "Rating", "Category", "Aspect", "Part"]).to_csv("ratings.csv", index=False)
         # for k, v in result.items():
         #     pd.DataFrame(v, columns=["Rating", "Category", "Aspect"]).to_csv(f"{k}.csv", index=False)
 

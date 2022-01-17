@@ -1,6 +1,7 @@
 const mm = require("maia-markov")
 const mf = require("maia-features")
 const tone = require("@tonejs/midi")
+const {statComp} = require("./features");
 
 function getTimeEvents(time, gran) {
   let results = ""
@@ -13,9 +14,11 @@ function getTimeEvents(time, gran) {
     return Math.abs(parseFloat(b) - remainder) < Math.abs(parseFloat(a) - remainder) ? b : a;
   })
   for (let i = 0; i < quotient; i++) {
-    results += gran[granTime[0]]
+    results += String.fromCharCode(Number(gran[granTime[0]]) + 109)
   }
-  results += gran[closest]
+  if (gran[closest] !== "") {
+     results += String.fromCharCode(Number(gran[closest]) + 109)
+  }
   return results
 }
 
@@ -35,7 +38,7 @@ function getPoints(filename,
                    gran = [0, 0.25, 0.33, 0.5, 0.67, 0.75, 1]) {
   const co = new mm.MidiImport(filename, gran).compObj
   let points = co.notes.map(n => {
-    return [n.MNN, n.ontime, n.offtime]
+    return [n.MNN, n.ontime, n.offtime, n.tonejs.volume]
   })
   points = Array.from(new Set(points.map(n => {
     return JSON.stringify(n)
@@ -76,13 +79,24 @@ function getPoints(filename,
 }
 
 function points2events(points, mode = "mode-1", gran = {
+  // 0: "",
+  // 0.25: "1",
+  // 0.33: "2",
+  // 0.5: "3",
+  // 0.67: "4",
+  // 0.75: "5",
+  // 1: "6"
   0: "",
-  0.25: "1",
-  0.33: "2",
-  0.5: "3",
-  0.67: "4",
-  0.75: "5",
-  1: "6"
+  0.1: "0",
+  0.2: "1",
+  0.3: "2",
+  0.4: "3",
+  0.5: "4",
+  0.6: "5",
+  0.7: "6",
+  0.8: "7",
+  0.9: "8",
+  1.0: "9"
 }) {
   let results = ""
   switch (mode) {
@@ -105,19 +119,27 @@ function points2events(points, mode = "mode-1", gran = {
     case "mode-2":
       const decomposed = []
       for (const pt of points) {
-        decomposed.push([pt[0], pt[1], "on"])
-        decomposed.push([pt[0], pt[2], "off"])
+        if (pt[3] > 0) {
+          decomposed.push([pt[0], pt[1], "on", pt[3]])
+          decomposed.push([pt[0], pt[2], "off", pt[3]])
+        }
       }
       decomposed.sort((x, y) => {
         return x[1] - y[1] || x[0] - y[0]
       })
       let ts = decomposed[0][1]
+      let vel = 0
       for (const pt of decomposed) {
         let td = pt[1] - ts
         if (td > 0) {
           results += getTimeEvents(td, gran)
         }
         if (pt[2] === "on") {
+          if (pt[3] !== vel) {
+            const v = Math.ceil(pt[3] / (1 / 8)) - 1
+            results += String.fromCharCode(v + 77)
+            vel = v
+          }
           results += String.fromCharCode((pt[0] % 12) + 97)
         } else if (pt[2] === "off") {
           results += String.fromCharCode((pt[0] % 12) + 65)

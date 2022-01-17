@@ -2,6 +2,7 @@ const mu = require("maia-util")
 const fs = require("fs");
 const util = require("./util")
 const cp = require("child_process");
+const path = require("path")
 const PolynomialRegression = require("ml-regression-polynomial");
 const distributions = require("distributions");
 const {abs, sum, mean, min, max, variance} = require("mathjs");
@@ -9,7 +10,7 @@ const {getPoints} = require("./util");
 const math = require("mathjs");
 
 
-function statComp(CSSR, midiDir, rawData = false, name = 'data') {
+function statComp(CSSR, midiDir, rawData, name) {
   let files
   const sequences = []
   if (rawData) {
@@ -23,7 +24,7 @@ function statComp(CSSR, midiDir, rawData = false, name = 'data') {
         } else if (s >= 1 && s <= 128) {
           seqStr += String.fromCharCode(((s - 1) % 12) + 97)
         } else if (s >= 129 && s <= 256) {
-          seqStr += String.fromCharCode(((s - 1) % 12) + 65)
+          seqStr += String.fromCharCode(((s - 129) % 12) + 65)
         } else if (s >= 257 && s <= 356) {
           seqStr += String.fromCharCode(Math.floor((s - 257) / 10) + 109)
         } else if (s >= 357 && s <= 388) {
@@ -37,28 +38,37 @@ function statComp(CSSR, midiDir, rawData = false, name = 'data') {
   } else {
     files = fs.readdirSync(midiDir).filter(f => f.endsWith(".mid"))
     for (const file of files) {
-      sequences.push(util.points2events(util.getPoints(CSSR.midi + file, true), "mode-2"))
+      sequences.push(util.points2events(util.getPoints(path.join(midiDir, file), "default", false, null), "mode-2"))
     }
   }
-
-
+  let sequenceSize = 0
+  for (const seq of sequences) {
+    sequenceSize += seq.length
+  }
+  sequenceSize /= sequences.length
+  const alphabetSize = fs.readFileSync(CSSR.alphabet, 'utf8').length
+  const l = Math.log2(sequenceSize) / Math.log2(alphabetSize)
   let data = sequences.join("\n")
-  fs.writeFileSync(CSSR.data + name, data)
+  fs.writeFileSync(path.join(CSSR.data + name), data)
+  try {
+    cp.execFileSync(
+      CSSR.executable, [
+        CSSR.alphabet,
+        path.join(CSSR.data + name),
+        l,
+      ]
+    )
+  } catch (err) {
+  }
+
   // let stdout = cp.execFileSync(
   //   CSSR.executable, [
-  //     CSSR.alphabet,
   //     CSSR.data + name,
   //     CSSR.pastSize,
+  //     CSSR.futureSize
   //   ]
   // )
-  let stdout = cp.execFileSync(
-    CSSR.executable, [
-      CSSR.data + name,
-      CSSR.pastSize,
-      CSSR.futureSize
-    ]
-  )
-  return parseFloat(stdout.toString().split("\n")[2].split(": ")[1])
+  // return parseFloat(stdout.toString().split("\n")[2].split(": ")[1])
 }
 
 
@@ -140,13 +150,51 @@ function tonalAmb(file) {
   return co.tonal_ambiguity()
 }
 
-function attInterval(file) {
-  const co = util.getCompObj(file, "mf")
-  return co.average_time_between_attacks() // In the unit of beat.
+function timeInterval(file) {
+  // const co = util.getCompObj(file, "mf")
+  // return co.average_time_between_attacks() // In the unit of beat.
+  const points = getPoints(file, "default", false, null)
+    .sort((x, y) => {
+      return x[1] - y[1] || x[0] - y[0] || x[2] - y[2]
+    })
+  const ioi = []
+  const kot = []
+  const kdt = []
+  for (let i = 1; i < points.length; i++) {
+    ioi.push(points[i][1] - points[i - 1][1])
+    const t = points[i][1] - points[i - 1][2]
+    if (t > 0) {
+      kdt.push(t)
+    } else if (t < 0) {
+      kot.push(abs(t))
+    }
+  }
+  if (kdt.length === 0) {
+    console.log("\n\n", file, "\n\n")
+  }
+  const ioi2 = finDiff(ioi)
+  return {
+    "firstIOI": {
+      "mean": ioi.length === 0 ? "" : mean(ioi),
+      "variance": ioi.length === 0 ? "" : variance(ioi)
+    },
+    "secondIOI": {
+      "mean": ioi2.length === 0 ? "" : mean(ioi2),
+      "variance": ioi2.length === 0 ? "" : variance(ioi2)
+    },
+    "KOT": {
+      "mean": kot.length === 0 ? "" : mean(kot),
+      "variance": kot.length === 0 ? "" : variance(kot)
+    },
+    "KDT": {
+      "mean": kdt.length === 0 ? "" : mean(kdt),
+      "variance": kdt.length === 0 ? "" : variance(kdt)
+    }
+  }
 }
 
-function rhyDis(file, grid = 0.25) {
-  // Expressivity
+function jitter(file, grid = 0.25) {
+  // Expressiveness
   // TODO: Tom mentioned his beat tracking method. Or tempo changes, but the method in pretty_midi does not work
   let ons = getPoints(file, "pitch and ontime", false, null).map(n => {
     return n[1]
@@ -168,7 +216,7 @@ function rhyDis(file, grid = 0.25) {
   } // TODO: It cannot handle when excerpts are supposed to have different tempi in various places.
 }
 
-function finDiff(arr, absDiff = true) {
+function finDiff(arr, absDiff = false) {
   const res = []
   let pre = arr[0]
   for (const x of arr.slice(1)) {
@@ -178,32 +226,13 @@ function finDiff(arr, absDiff = true) {
   return res
 }
 
-function IOI(file) {
-  let ons = getPoints(file, "pitch and ontime", false, null).map(n => {
-    return n[1]
-  })
-  const firstIOI = finDiff(ons)
-  const secondIOI = finDiff(firstIOI)
-  return {
-    "firstIOI": {
-      "mean": mean(firstIOI),
-      "variance": variance(firstIOI)
-    },
-    "secondIOI": {
-      "mean": mean(secondIOI),
-      "variance": variance(secondIOI)
-    }
-  }
-}
-
 module.exports = {
   statComp,
   transComp,
   arcScore,
   tonalAmb,
-  attInterval,
-  rhyDis,
-  IOI,
+  timeInterval,
+  jitter,
 }
 const arr1 = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
 const arr2 = [2, 3, 5, 6, 2, 3, 5, 6, 2, 3, 5, 6]
@@ -255,3 +284,17 @@ console.log("arr4:",
       "variance": variance(finDiff(arr4))
     }
   })
+
+const maxVec = new Array(4 * 3 / 2)
+let inc = 0
+// const points = [[0, 64], [1, 62], [3, 67],[4, 69]]
+const points = [[0, 60, 2], [0, 72, 2], [1, 64, 1], [1, 67, 1]]
+// for (let i = 0; i < 4 - 1; i++) {
+//   for (let j = i + 1; j < 4; j++) {
+//     maxVec[inc++] = mu.subtract_two_arrays(points[j], points[i])
+//   }
+// }
+console.log(mu.fifth_steps_mode(
+  points,
+  mu.krumhansl_and_kessler_key_profiles));
+// console.log(mu.count_rows(maxVec))

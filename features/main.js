@@ -1,15 +1,16 @@
 const feat = require("./features")
 const fs = require("fs")
+const path = require("path")
 const {mean, min, max, variance} = require("mathjs");
 
 const mainPaths = {
   "alex": {
     "midiFile": "/home/zongyu/Projects/listening_study/midi/151.mid",
-    "midiDir": "/home/zongyu/Projects/listening_study/midi/",
+    "midiDir": "/home/zongyu/Projects/aimgef/aimgef-assets/stimuli/",
     "MTDir": "/home/zongyu/Projects/MT-generated/",
     "CSSR": {
-      "executable": "/home/zongyu/Projects/decisional_states-1.0/examples/SymbolicSeries",
-      // "executable": "/home/zongyu/Projects/CSSR/CSSR",
+      // "executable": "/home/zongyu/Projects/decisional_states-1.0/examples/SymbolicSeries",
+      "executable": "/home/zongyu/Projects/CSSR/CSSR",
       "alphabet": "/home/zongyu/Projects/CSSR/alphabet-mode-3",
       "data": "/home/zongyu/Projects/aimgef/features/data/",
       "pastSize": 1.855, // log_2(1025) / log_2(42)
@@ -146,25 +147,58 @@ function reportMTGenerated() {
 }
 
 function reportRatings() {
-  const rows = fs.readFileSync('./ratings.csv').toString().split('\r\n').slice(1).map(n => {
+  const header = [
+    "ID", "Rating", "Category", "Aspect", "Part",
+    "transComp", "arcScore", "tonalAmb", "ioi_mean", "ioi_variance", "ioi2_mean", "ioi2_variance",
+    "kot_mean", "kot_variance", "kdt_mean", "kdt_variance", "jitter_mean", "jitter_variance"
+  ]
+  const res = {}
+  for (let i = 1; i <= 250; i++) {
+    res[i] = {}
+  }
+  const isDirectory = fileName => {
+    return fs.lstatSync(fileName).isDirectory()
+  }
+  const dirs = fs.readdirSync(mainPath.midiDir).map(fileName => {
+    return path.join(mainPath.midiDir, fileName)
+  }).filter(isDirectory)
+  for (const dir of dirs) {
+    const midiFiles = fs.readdirSync(dir).filter(n => {
+      return n.endsWith('.mid')
+    }).map(fileName => {return path.join(dir, fileName)})
+    for (const file of midiFiles) {
+      const id = file.split("/").slice(-1)[0].split(".")[0]
+      res[id]["transComp"] = feat.transComp(file)
+      res[id]["arcScore"] = feat.arcScore(file)
+      res[id]["tonalAmb"] = feat.tonalAmb(file)
+      res[id]["ioi_mean"] = feat.timeInterval(file)["firstIOI"]["mean"]
+      res[id]["ioi_variance"] = feat.timeInterval(file)["firstIOI"]["variance"]
+      res[id]["ioi2_mean"] = feat.timeInterval(file)["secondIOI"]["mean"]
+      res[id]["ioi2_variance"] = feat.timeInterval(file)["secondIOI"]["variance"]
+      res[id]["kot_mean"] = feat.timeInterval(file)["KOT"]["mean"]
+      res[id]["kot_variance"] = feat.timeInterval(file)["KOT"]["variance"]
+      res[id]["kdt_mean"] = feat.timeInterval(file)["KDT"]["mean"]
+      res[id]["kdt_variance"] = feat.timeInterval(file)["KDT"]["variance"]
+      res[id]["jitter_mean"] = feat.jitter(file)["mean"]
+      res[id]["jitter_variance"] = feat.jitter(file)["variance"]
+    }
+  }
+  const rows = fs.readFileSync('./ratings.csv').toString().split('\n').slice(1, -1).map(n => {
     return n.split(',')
   })
-  for (const i in rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const id = rows[i][0]
     try {
       const featScores = []
-      const midiPath = mainPath.midiDir + rows[i][4] + '.mid'
-      featScores.push(feat.transComp(midiPath))
-      featScores.push(feat.arcScore(midiPath))
-      featScores.push(feat.tonalAmb(midiPath))
-      featScores.push(feat.attInterval(midiPath))
-      featScores.push(feat.rhyDis(midiPath).mean)
-      featScores.push(feat.IOI(midiPath))
+      for (const f of header.slice(5)) {
+        featScores.push(res[id][f])
+      }
       rows[i] = rows[i].concat(featScores)
     } catch (e) {
       console.log("Reading midi file failed.")
     }
   }
-  const header = ["Rating", "Category", "Aspect", "Part", "Name", "transComp", "arcScore", "tonalAmb", "attInterval", "rhyDis"]
+
   const writeStream = fs.createWriteStream('LSRatings.csv');
   writeStream.write(header.join(',') + '\n')
   for (const row of rows) {
@@ -178,5 +212,25 @@ function reportRatings() {
   // console.log("rhyDis: ", feat.rhyDis(mainPath.midiFile))
 }
 
+function getCategoriesStatComp() {
+  const res = {}
+  const isDirectory = fileName => {
+    return fs.lstatSync(fileName).isDirectory()
+  }
+  const dirs = fs.readdirSync(mainPath.midiDir).map(fileName => {
+    return path.join(mainPath.midiDir, fileName)
+  }).filter(isDirectory)
+  for (const dir of dirs) {
+    const category = dir.split('/').slice(-1)[0]
+    feat.statComp(mainPath.CSSR, dir, false, category)
+    res[category] = infoReader(path.join(mainPath.CSSR.data, category + "_info"))["Statistical_Complexity"]
+  }
+  console.log(res)
+}
+
 // reportMTGenerated()
 reportRatings()
+// getCategoriesStatComp()
+// const mm = require("maia-markov")
+// a = new mm.MidiImport("/home/zongyu/Projects/aimgef/aimgef-assets/stimuli/CSQ-MaMa/26.mid")
+// console.log()
