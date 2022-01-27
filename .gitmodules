@@ -1,0 +1,3 @@
+[submodule "aimgef-assets"]
+	path = aimgef-assets
+	url = git@github.com:mstrcyork/aimgef-assets.git
