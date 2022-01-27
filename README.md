@@ -53,6 +53,12 @@ The generated stimuli used in the listening study can be found [here](https://gi
 |BeAf|126-150|-|
 |LiTr|-|226-250|
 
+### Hypothesis testing
+The scripts of non-parametric Bayesian hypothesis testing mentioned in the paper can be found in `bayes_factor` folder. 
+These R scripts are adapted from the [original code](https://osf.io/gny35/). The statistic results can be replicated by running `LatentNormalTTestSimulationStudy.R` or `LatentNormalSpearmanSimulationStudy.R`, 
+in which the target scenario need to be specified for `allScenarios`, for example, `CSQ-MaMa-MuTr-Ss` stands for comparing stylistic success ratings between Maia Markov and Music Transformer in CSQ part of study.
+After running, a Rdata file containing Bayes factor is generated.
+
 ## A Good Algorithm Does Not Steal - It Imitates
 ### Model training and excerpts generation
 #### Get Classical string quartets from KernScore
