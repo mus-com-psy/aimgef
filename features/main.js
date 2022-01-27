@@ -229,8 +229,13 @@ function getCategoriesStatComp() {
 }
 
 // reportMTGenerated()
-reportRatings()
+// reportRatings()
 // getCategoriesStatComp()
-// const mm = require("maia-markov")
+const mm = require("maia-markov")
 // a = new mm.MidiImport("/home/zongyu/Projects/aimgef/aimgef-assets/stimuli/CSQ-MaMa/26.mid")
 // console.log()
+a = new mm.XmlImport("/home/zongyu/Downloads/sample.musicxml")
+// for (const n of a) {
+//   console.log((n.ontime + 0.5) * 4, n.MNN, n.MPN, n.duration * 4, n.staffNo + 1)
+// }
+console.log()

@@ -22,7 +22,11 @@ node_modules/
 
 # Data files maybe?
 # *.json
-*.csv
+#*.csv
+features/*.csv
+features/figure/*.csv
+pubs_material/springer_machine_learning/ratings_plot/*.csv
+features/figure/raincloud/data/*.csv
 *.zip
 sub/
 arcreport/
