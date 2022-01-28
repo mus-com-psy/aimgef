@@ -32,6 +32,7 @@ Please find the following procedures for reproducing the results stated in:
 - Reimplementation: `python main.py --model "model" --style "style" --mode TRAIN`
   - `"model"`: `Transformer`, `VAE`
   - `"style"`: `CSQ`, `CPI`
+  - The hyperparameters for each model is specified in `./model/config.yaml`.
 - MAIA Markov: check [installation guide](https://www.npmjs.com/package/maia-markov)
 - Coupled recurrent model: check [authors' repository](https://github.com/jthickstun/ismir2019coupled)
 
