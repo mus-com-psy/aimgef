@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, choices=['VAE', 'Transformer'])
     parser.add_argument('--style', type=str, choices=['CSQ', 'CPI'])
-    parser.add_argument('--mode', type=str, choices=['TRAIN', 'PREDICT', 'ORI', 'GEN', 'CSQ_DATA'])
+    parser.add_argument('--mode', type=str, choices=['TRAIN', 'PREDICT', 'ORI', 'GEN', 'CPI_DATA', 'CSQ_DATA'])
     parser.add_argument('--src', type=str)
     parser.add_argument('--epoch', type=int)
     arguments = parser.parse_args()

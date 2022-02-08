@@ -37,6 +37,9 @@ CPI_Orig <- read.csv("CPI-Orig.csv")
 CPI_LiTr <- read.csv("CPI-LiTr.csv")
 
 allScenarios <- c(
+  "CPI-LiTr-MuTr-Ss",
+  "CPI-LiTr-MVAE-Ss",
+  "CPI-LiTr-Orig-Ss"
   #"CSQ-MaMa-MuTr-Ss",
   #"CSQ-MaMa-MuTr-Re",
   #"CSQ-MaMa-MVAE-Re",
@@ -46,7 +49,7 @@ allScenarios <- c(
   #"Orig-CSQ-CPI-Ss",
   #"MuTr-CSQ-CPI-Ss",
   #"MVAE-CSQ-CPI-Ss",
-  "Ap-Ss"
+  # "Ap-Ss",
   #"CSQ-MuTr-MVAE-Ss",
   #"CPI-MuTr-MVAE-Ss",
   #"CSQ-MuTr-MVAE-Me",
@@ -65,6 +68,25 @@ registerDoMC(core = no_cores)
 
 analyzeSamples <- function(nIter, nBurnin, myCase, progBar = TRUE) {
   switch(myCase,
+
+         "CPI-LiTr-MuTr-Ss" = {
+           x <- CPI_LiTr$Ss
+           y <- CPI_MuTr$Ss
+           paired <- FALSE
+           oneSided <- FALSE
+         },
+         "CPI-LiTr-MVAE-Ss" = {
+           x <- CPI_LiTr$Ss
+           y <- CPI_MVAE$Ss
+           paired <- FALSE
+           oneSided <- FALSE
+         },
+         "CPI-LiTr-Orig-Ss" = {
+           x <- CPI_LiTr$Ss
+           y <- CPI_Orig$Ss
+           paired <- FALSE
+           oneSided <- FALSE
+         },
          "CSQ-MaMa-MuTr-Ss" = {
            x <- CSQ_MaMa$Ss
            y <- CSQ_MuTr$Ss
