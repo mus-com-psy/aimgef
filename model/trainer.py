@@ -74,7 +74,7 @@ class Trainer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.resume = resume
         if resume:
-            self.logdir = f"./experiment/{model_name}/{style}/{resume[1]}"
+            self.logdir = f"./experiment/{model_name}/{style}/{resume[0]}"
             with open(f"./experiment/{model_name}/{style}/{resume[0]}/config.yaml", 'r') as f:
                 config = yaml.safe_load(f)
         else:
