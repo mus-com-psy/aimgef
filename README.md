@@ -25,8 +25,10 @@ Please find the following procedures for reproducing the results stated in:
 ### Data preprocess
 - CSQ: `python main.py --mode CSQ_DATA`
 - CPI: `python main.py --mode CPI_DATA`
- 
-([MAESTRO](https://magenta.tensorflow.org/datasets/maestro) dataset need to be manually downloaded and placed under 'dataset' folder)
+
+The CSQ dataset, which we used for training in the CSQ task, can be downloaded from [here](https://tomcollinsresearch.net/research/data/). It consists of a fast_first folder containing the kern and MIDI files used in this project, as well as a not_fast_first folder containing other string quartets by Haydn, Mozart, and Beethoven not used in this project. We have put just the MIDI files from the fast_first folder in [aimgef-assets](https://github.com/mstrcyork/aimgef-assets/) too.
+
+The [MAESTRO](https://magenta.tensorflow.org/datasets/maestro) dataset, which we used for training in the CPI task, needs to be downloaded and placed in the "dataset" folder.
 
 ### Model training
 - Reimplementation: `python main.py --model "model" --style "style" --mode TRAIN`
