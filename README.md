@@ -15,8 +15,7 @@ And the published conference paper:
 }
 ```
 
-
-Please find the following procedures for reproducing the results stated in:
+Below are instructions for reproducing the results reported in:
 
 - [Deep Learning's Shallow Gains](#deep-learnings-shallow-gains)
 - [A Good Algorithm Does Not Steal - It Imitates](#a-good-algorithm-does-not-steal---it-imitates)
