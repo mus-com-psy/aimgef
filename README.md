@@ -37,7 +37,7 @@ The [MAESTRO](https://magenta.tensorflow.org/datasets/maestro) dataset, which we
 - [MAIA Markov](https://www.npmjs.com/package/maia-markov):
   - Version 0.0.5 was used to generate stimuli for the listening study.
   - The four scripts beginning strq2020_... in the examples folder are the ones to run, and a script with "analyze" in the filename will need to be run before the corresponding script with "generate" in the file name, because the former creates the state transition matrices and initial distributions from which the latter samples.
-- Coupled recurrent model: check [authors' repository](https://github.com/jthickstun/ismir2019coupled)
+- Coupled recurrent model: please see the [authors' repository](https://github.com/jthickstun/ismir2019coupled).
 
 ### Excerpts generation
 `python main.py --model "model" --style "style" --mode GEN --src "checkpoint" --epoch "epoch"`
