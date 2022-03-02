@@ -21,7 +21,7 @@ Below are instructions for reproducing the results reported in:
 - [A Good Algorithm Does Not Steal - It Imitates](#a-good-algorithm-does-not-steal---it-imitates)
 
 ## Deep Learning's Shallow Gains
-### Data preprocess
+### Data preprocessing
 - CSQ: `python main.py --mode CSQ_DATA`
 - CPI: `python main.py --mode CPI_DATA`
 
