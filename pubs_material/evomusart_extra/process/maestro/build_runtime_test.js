@@ -56,6 +56,7 @@ const data = fs.readdirSync(mainPath["inputDir"])
     return path.extname(filename) === ".json"
   })
 for (let i = 1; i <= param.numDiv; i++) {
+  console.log("progress:", `${i}/${param.numDiv}`)
   let report = {}
   let numNotes = 0
   let numEntries = 0
