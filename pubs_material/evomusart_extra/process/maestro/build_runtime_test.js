@@ -3,20 +3,13 @@ const path = require("path")
 const Hasher = require("./../Hasher.js").default
 const {performance} = require('perf_hooks');
 
-const selfTest = false;
-
 const param = {
   "tMin": 0.5,
   "tMax": 2,
   "pMin": 1,
   "pMax": 6,
-  "sampleSize": 50,
   "numDiv": 10,
-  "timeBuffer": 50,
-  "winSize": 8,
-  "jitter": selfTest ? [0] : [0, 0.001, 0.005, 0.01, 0.05, 0.1],
-  "binSize": selfTest ? [0.1] : [0.1, 0.5, 1, 5],
-  "scale": selfTest ? [1] : [0.75, 0.9, 1, 1.1, 1.25]
+  "timeBuffer": 50
 }
 
 // Individual user paths.
@@ -32,8 +25,8 @@ const mainPaths = {
     ),
   },
   "server": {
-    "inputDir": path.join(__dirname, "out", "maestro_points_train"),
-    "outputDir": path.join(__dirname, "out", "runtime_test_out"),
+    "inputDir": "/home/alexyin/hunting-songs-explorer/server/evomusart_extra/out/maestro_points_train/",
+    "outputDir": "/home/alexyin/aimgef/pubs_material/evomusart_extra/process/maestro/",
   }
 }
 
