@@ -6,7 +6,7 @@ const {mean, min, max, variance} = require("mathjs");
 const mainPaths = {
   "alex": {
     "midiFile": "/home/zongyu/Projects/listening_study/midi/151.mid",
-    "midiDir": "/home/zongyu/Projects/aimgef/aimgef-assets/stimuli/",
+    "midiDir": "/Users/zongyu/PycharmProjects/aimgef/aimgef-assets/stimuli/",
     "MTDir": "/home/zongyu/Projects/MT-generated/",
     "CSSR": {
       // "executable": "/home/zongyu/Projects/decisional_states-1.0/examples/SymbolicSeries",
@@ -229,13 +229,13 @@ function getCategoriesStatComp() {
 }
 
 // reportMTGenerated()
-// reportRatings()
+reportRatings()
 // getCategoriesStatComp()
-const mm = require("maia-markov")
+// const mm = require("maia-markov")
 // a = new mm.MidiImport("/home/zongyu/Projects/aimgef/aimgef-assets/stimuli/CSQ-MaMa/26.mid")
 // console.log()
-a = new mm.XmlImport("/home/zongyu/Downloads/sample.musicxml")
+// a = new mm.XmlImport("/home/zongyu/Downloads/sample.musicxml")
 // for (const n of a) {
 //   console.log((n.ontime + 0.5) * 4, n.MNN, n.MPN, n.duration * 4, n.staffNo + 1)
 // }
-console.log()
+// console.log()
