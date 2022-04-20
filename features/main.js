@@ -16,6 +16,18 @@ const mainPaths = {
       "pastSize": 1.855, // log_2(1025) / log_2(42)
       "futureSize": 1.855
     },
+  },
+  "tom": {
+    "midiFile": "/home/zongyu/Projects/listening_study/midi/151.mid",
+    "midiDir": "/Users/tomthecollins/Shizz/repos/aimgef/aimgef-assets/stimuli/",
+    "MTDir": "/home/zongyu/Projects/MT-generated/",
+    "CSSR": {
+      "executable": "/home/zongyu/Projects/CSSR/CSSR",
+      "alphabet": "/home/zongyu/Projects/CSSR/alphabet-mode-3",
+      "data": "/home/zongyu/Projects/aimgef/features/data/",
+      "pastSize": 1.855, // log_2(1025) / log_2(42)
+      "futureSize": 1.855
+    },
   }
 }
 
@@ -229,11 +241,11 @@ function getCategoriesStatComp() {
 }
 
 // reportMTGenerated()
-reportRatings()
+// reportRatings()
 // getCategoriesStatComp()
-// const mm = require("maia-markov")
-// a = new mm.MidiImport("/home/zongyu/Projects/aimgef/aimgef-assets/stimuli/CSQ-MaMa/26.mid")
-// console.log()
+const mm = require("maia-markov")
+a = new mm.MidiImport(path.join(mainPath.midiDir, "CSQ-MaMa", "26.mid"))
+console.log(a)
 // a = new mm.XmlImport("/home/zongyu/Downloads/sample.musicxml")
 // for (const n of a) {
 //   console.log((n.ontime + 0.5) * 4, n.MNN, n.MPN, n.duration * 4, n.staffNo + 1)

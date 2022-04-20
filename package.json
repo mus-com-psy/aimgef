@@ -16,7 +16,7 @@
     "csv-writer": "^1.6.0",
     "distributions": "^2.1.0",
     "maia-features": "file:./features/maia-features",
-    "maia-markov": "^0.0.31",
+    "maia-markov": "^0.0.49",
     "maia-util": "^0.2.27",
     "mathjs": "^9.5.0",
     "minimist": "^1.2.5",
