@@ -5,10 +5,10 @@ This repo contains code supporting the AIMGEF project, which aims to provide a l
 
 ```
 @article{yin2022deep,
-	title={Deep learning's shallow gains: A comparative evaluation of algorithms for automatic music generation},
+  title={Deep learning's shallow gains: A comparative evaluation of algorithms for automatic music generation},
   author={Yin, Zongyu and Reuben, Federico and Stepney, Susan and Collins, Tom},
-	journal={Machine Learning},
-	year={in press}
+  journal={Machine Learning},
+  year={in press}
 }
 
 @article{yin2022measuring,
