@@ -12,13 +12,13 @@ This repo contains code supporting the AIMGEF project, which aims to provide a l
 }
 
 @article{yin2022measuring,
-	title={Measuring when a music generation algorithm copies too much: The originality report, cardinality score, and symbolic fingerprinting by geometric hashing},
+  title={Measuring when a music generation algorithm copies too much: The originality report, cardinality score, and symbolic fingerprinting by geometric hashing},
   author={Yin, Zongyu and Reuben, Federico and Stepney, Susan and Collins, Tom},
-	journal={Springer Nature Computer Science},
-	year={2022},
-	volume={3},
-	number={340},
-	pages={1--18}
+  journal={Springer Nature Computer Science},
+  year={2022},
+  volume={3},
+  number={340},
+  pages={1--18}
 }
 
 @inproceedings{yin2021good,
