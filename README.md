@@ -1,17 +1,33 @@
-# Artificial Intelligence Music Generation Evaluation Framework
-This repo contains supplementary code for AIMGEF, which currently covers an article under review named：
+# Artificial Intelligence Music Generation Evaluation Framework (AIMGEF)
+This repo contains code supporting the AIMGEF project, which aims to provide a larger and more robust set of evaluation measures for automatic music generation than loss and accuracy.
 
-*Deep learning's shallow gains: A comparative evaluation of algorithms for automatic music generation*
+## Related papers
 
-And the published conference paper:
 ```
+@article{yin2022deep,
+	title={Deep learning's shallow gains: A comparative evaluation of algorithms for automatic music generation},
+  author={Yin, Zongyu and Reuben, Federico and Stepney, Susan and Collins, Tom},
+	journal={Machine Learning},
+	year={in press}
+}
+
+@article{yin2022measuring,
+	title={Measuring when a music generation algorithm copies too much: The originality report, cardinality score, and symbolic fingerprinting by geometric hashing},
+  author={Yin, Zongyu and Reuben, Federico and Stepney, Susan and Collins, Tom},
+	journal={Springer Nature Computer Science},
+	year={2022},
+	volume={3},
+	number={340},
+	pages={1--18}
+}
+
 @inproceedings{yin2021good,
-  title={“A Good Algorithm Does Not Steal--It Imitates”: The Originality Report as a Means of Measuring When a Music Generation Algorithm Copies Too Much},
+  title={``A good algorithm does not steal -- it imitates'': The originality report as a means of measuring when a music generation algorithm copies too much},
   author={Yin, Zongyu and Reuben, Federico and Stepney, Susan and Collins, Tom},
   booktitle={Artificial Intelligence in Music, Sound, Art and Design: 10th International Conference, EvoMUSART 2021, Held as Part of EvoStar 2021, Virtual Event, April 7--9, 2021, Proceedings 10},
   pages={360--375},
   year={2021},
-  organization={Springer International Publishing}
+  organization={Springer}
 }
 ```
 
@@ -58,10 +74,11 @@ The generated stimuli used in the listening study can be found [here](https://gi
 |LiTr|-|226-250|
 
 ### Hypothesis testing
-The scripts of non-parametric Bayesian hypothesis testing mentioned in the paper can be found in `bayes_factor` folder. 
-These R scripts are adapted from the [original code](https://osf.io/gny35/). The statistic results can be replicated by running `LatentNormalTTestSimulationStudy.R` or `LatentNormalSpearmanSimulationStudy.R`, 
+The scripts of non-parametric Bayesian hypothesis testing mentioned in the paper can be found in `bayes_factor` folder.
+These R scripts are adapted from the [original code](https://osf.io/gny35/). The statistic results can be replicated by running `LatentNormalTTestSimulationStudy.R` or `LatentNormalSpearmanSimulationStudy.R`,
 in which the target scenario need to be specified for `allScenarios`, for example, `CSQ-MaMa-MuTr-Ss` stands for comparing stylistic success ratings between Maia Markov and Music Transformer in CSQ part of study.
-After running, a Rdata file containing Bayes factor is generated.
+After running, an Rdata file containing Bayes factor is generated.
+
 
 ## A Good Algorithm Does Not Steal - It Imitates
 ### Model training and excerpts generation
