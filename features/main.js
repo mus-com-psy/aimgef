@@ -195,7 +195,7 @@ function reportRatings() {
       res[id]["jitter_variance"] = feat.jitter(file)["variance"]
     }
   }
-  const rows = fs.readFileSync('./ratings.csv').toString().split('\n').slice(1, -1).map(n => {
+  const rows = fs.readFileSync('../aimgef-assets/ratings_flatten.csv').toString().split('\r\n').slice(1, -1).map(n => {
     return n.split(',')
   })
   for (let i = 0; i < rows.length; i++) {
@@ -241,11 +241,11 @@ function getCategoriesStatComp() {
 }
 
 // reportMTGenerated()
-// reportRatings()
+reportRatings()
 // getCategoriesStatComp()
-const mm = require("maia-markov")
-a = new mm.MidiImport(path.join(mainPath.midiDir, "CSQ-MaMa", "26.mid"))
-console.log(a)
+// const mm = require("maia-markov")
+// a = new mm.MidiImport(path.join(mainPath.midiDir, "CSQ-MaMa", "26.mid"))
+// console.log(a)
 // a = new mm.XmlImport("/home/zongyu/Downloads/sample.musicxml")
 // for (const n of a) {
 //   console.log((n.ontime + 0.5) * 4, n.MNN, n.MPN, n.duration * 4, n.staffNo + 1)
