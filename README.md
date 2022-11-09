@@ -1,5 +1,5 @@
 # Artificial Intelligence Music Generation Evaluation Framework (AIMGEF)
-This repo contains code supporting the AIMGEF project, which aims to provide a larger and more robust set of evaluation measures for automatic music generation than loss and accuracy.
+This repo contains code supporting the AIMGEF project, which aims to provide a larger and more robust set of evaluation metrics than loss and accuracy for automatic music generation.
 
 ## Related papers
 
@@ -34,6 +34,7 @@ This repo contains code supporting the AIMGEF project, which aims to provide a l
 Below are instructions for reproducing the results reported in:
 
 - [Deep Learning's Shallow Gains](#deep-learnings-shallow-gains)
+- [Measuring When a Music Generation Algorithm Copies Too Much](#measuring-when-a-music-generation-algorithm-copies-too-much)
 - [A Good Algorithm Does Not Steal - It Imitates](#a-good-algorithm-does-not-steal---it-imitates)
 
 ## Deep Learning's Shallow Gains
@@ -79,6 +80,10 @@ These R scripts are adapted from the [original code](https://osf.io/gny35/). The
 in which the target scenario need to be specified for `allScenarios`, for example, `CSQ-MaMa-MuTr-Ss` stands for comparing stylistic success ratings between Maia Markov and Music Transformer in CSQ part of study.
 After running, an Rdata file containing Bayes factor is generated.
 
+## Measuring When a Music Generation Algorithm Copies Too Much
+`cd ./pubs_material/sn_com_sci/process`
+
+`node main.js`
 
 ## A Good Algorithm Does Not Steal - It Imitates
 ### Model training and excerpts generation
@@ -97,7 +102,7 @@ After running, an Rdata file containing Bayes factor is generated.
 `checkpoint dir` is automatically generated during training, named by datetime (e.g., 20201113-182345).
 
 ### Originality check
-`cd ./pubs_material/evomusar_2021` before conducting the following procedures.
+`cd ./pubs_material/evomusart_2021` before conducting the following procedures.
 
 #### Originality baseline
 `cd originality_report`
