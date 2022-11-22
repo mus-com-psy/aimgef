@@ -37,6 +37,8 @@ Below are instructions for reproducing the results reported in:
 - [Measuring When a Music Generation Algorithm Copies Too Much](#measuring-when-a-music-generation-algorithm-copies-too-much)
 - [A Good Algorithm Does Not Steal - It Imitates](#a-good-algorithm-does-not-steal---it-imitates)
 
+The Python code mentioned below can be run from command line (e.g., Terminal). [PyCharm's](https://www.jetbrains.com/pycharm/) terminal is also an option, with working directory set to the root folder of wherever the copy of this repository is downloaded/exists on your machine.
+
 ## Deep Learning's Shallow Gains
 ### Data preprocessing
 - CSQ: `python main.py --mode CSQ_DATA`
