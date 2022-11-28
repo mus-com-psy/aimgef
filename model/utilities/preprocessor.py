@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from model.utilities.midi_io import MIDI
+from midi_io import MIDI
 
 
 def get_maestro_midi_list(split):

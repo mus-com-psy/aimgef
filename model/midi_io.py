@@ -211,7 +211,7 @@ class MIDI:
                     time += int(time_granularity[token - 256] * scalar)
 
             plt.imshow(image, origin='lower')
-            plt.show()
+            #plt.show()
         else:
             scalar = 1
             total_time = sum([(t - 256) for t in tokens if 257 <= t <= 356])
@@ -228,7 +228,7 @@ class MIDI:
                         image[note_on, time:time + int((token - 256) * scalar)] = 1
                     time += int((token - 256) * scalar)
             plt.imshow(image, origin='lower', aspect="auto")
-            plt.show()
+            #plt.show()
 
     @staticmethod
     def to_midi(tracks, time_granularity):

@@ -10,7 +10,7 @@ def main(args):
     else:
         durations = False
     if args.mode == 'TRAIN':
-        trainer = Trainer(model_name=args.model, style=args.style, resume=(args.src, args.epoch))
+        trainer = Trainer(model_name=args.model, style=args.style, resume=None)
         trainer.train()
     elif args.mode == 'PREDICT':
         trainer = Trainer(model_name=args.model, style=args.style, resume=(args.src, args.epoch))

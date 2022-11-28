@@ -11,7 +11,7 @@ class Dataset(data.Dataset):
             raise ValueError('Invalid partition.')
         self.split = split
         self.length = length
-        self.path = f'./dataset/{style}/{representation}'
+        self.path = f'./dataset/{style}/{representation}/{length}'
         self.len = sum([len(files) for r, d, files in os.walk(os.path.join(self.path, split))])
         print(f'Loading dataset: {style} - {split} - {length}\n\tSize: {self.len}')
 
