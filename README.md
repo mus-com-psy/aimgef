@@ -97,7 +97,7 @@ After running, an Rdata file containing Bayes factor is generated.
 `python main.py --model Transformer --style CSQ --mode TRAIN`
 
 #### Generate excerpts from trained Transformer
-`python main.py --model Transformer --style CSQ --mode TRAIN --src "checkpoint dir" --epoch 3`
+`python main.py --model Transformer --style CSQ --mode GEN --src "checkpoint dir" --epoch 3`
 
 `checkpoint dir` is automatically generated during training, named by datetime (e.g., 20201113-182345).
 
