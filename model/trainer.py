@@ -180,11 +180,11 @@ class Trainer:
                 writer.add_scalar('TRAIN/ITER/LOSS', loss_norm, self.iteration)
                 writer.add_scalar('TRAIN/ITER/ACC', acc_norm, self.iteration)
                 self.iteration += 1
-                # if (e == 1) and (i in [100, 300, 1000, 5000]):
-                #     torch.save({'epoch': e,
-                #                 'model_state_dict': self.model.state_dict(),
-                #                 'optimizer_state_dict': self.scheduler.state_dict()},
-                #                f'{self.logdir}/model_{e}-{i}.pt')
+                if (e == 1) and (i in [100, 300, 1000, 5000]):
+                    torch.save({'epoch': e,
+                                'model_state_dict': self.model.state_dict(),
+                                'optimizer_state_dict': self.scheduler.state_dict()},
+                               f'{self.logdir}/model_{e}-{i}.pt')
 
                 if i % 10 == 0:
                     print(f'Train Epoch: {e} [{i * batch_size}/{len(self.train_loader.dataset)} ' +
