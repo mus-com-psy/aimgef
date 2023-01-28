@@ -1,0 +1,9 @@
+# You need to install PyTorch by yourself
+pyyaml
+tqdm
+tensorboard
+matplotlib
+pretty_midi
+pandas
+beautifulsoup4
+easydict
