@@ -29,10 +29,7 @@ class MIDI:
             raise KeyError("Invalid time unit.")
         self.time_quantization = time_quantization
 
-        self.resolution = 480
-        self.tempo = 120
-        self.source = pretty_midi.PrettyMIDI(resolution=self.resolution, initial_tempo=self.tempo)
-        self.num_tracks = 1
+        self.source = pretty_midi.PrettyMIDI(resolution=480, initial_tempo=120)
 
     @property
     def vocab(self):
@@ -53,10 +50,10 @@ class MIDI:
         return self.source.tick_to_time(int(tick))
 
     def crotchet2tick(self, crotchet):
-        return crotchet * self.resolution
+        return crotchet * self.source.resolution
 
     def tick2crotchet(self, tick):
-        return tick / self.resolution
+        return tick / self.source.resolution
 
     def crotchet2time(self, crotchet):
         return self.tick2time(self.crotchet2tick(crotchet))
@@ -105,9 +102,8 @@ class MIDI:
     def process(self, filename, ignore_velocity, merge_tracks, pitch_shift=0, time_scale=1):
         self.source = pretty_midi.PrettyMIDI(filename)
         # ticks per semibreve
-        self.resolution = self.source.resolution
         tracks = self.source.instruments
-        self.num_tracks = len(tracks)
+        num_tracks = len(tracks)
         if merge_tracks:
             tracks_of_events = [
                 sorted(
@@ -135,7 +131,7 @@ class MIDI:
 
         sequence = [[] for _ in range(len(tracks_of_events))]
         keyboard = [[False for _ in range(128)]
-                    for _ in range(self.num_tracks)]
+                    for _ in range(num_tracks)]
         for i, track in enumerate(tracks_of_events):
             cur_vel = -1
             cur_time = 0
@@ -167,7 +163,8 @@ class MIDI:
         )
         return np.array(sequence, dtype=int)
 
-    def to_midi(self, sequence, tempo=120):
+    def to_midi(self, sequence, resolution=480, tempo=120):
+        self.source = pretty_midi.PrettyMIDI(resolution=resolution, initial_tempo=tempo)
         for track in sequence:
             instrument = pretty_midi.Instrument(program=0)
             onset = {n: [] for n in range(128)}
