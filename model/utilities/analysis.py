@@ -1,16 +1,7 @@
-"""
-This script checks the number of:
-    - String quartet
-    - First movements
-    - Fast tempo
-"""
-
-
+#!/usr/bin/env python3
 import os
-from typing import deprecated
 
 
-@deprecated("Potentially to update in the future")
 def main():
     composer = ['Beethoven', 'Haydn', 'Mozart']
     for c in composer:

@@ -1,11 +1,7 @@
 import torch
 import torch.nn as nn
 
-
-def reparameterize(mu, log_var):
-    std = torch.exp(0.5 * log_var)
-    eps = torch.randn_like(std)
-    return mu + eps * std
+from ..utilities.trick import reparameterize
 
 
 class Encoder(nn.Module):

@@ -1,5 +1,5 @@
 # You need to install PyTorch by yourself
-hyperpyyaml
+pyyaml
 tqdm
 tensorboard
 matplotlib

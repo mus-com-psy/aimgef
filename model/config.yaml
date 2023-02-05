@@ -1,14 +1,4 @@
-train_params:
-    epoch: 100
-    batch_size: 4
-
-data_params:
-    style: "CSQ"
-    vocab_size: 270
-    seq_len: 2048
-    # 
-
-
+---
 VAE:
   epoch: 100
   warmup_epoch: 20
@@ -45,3 +35,5 @@ Transformer:
   CPI:
     vocab_size: 389
     seq_len: 2048
+
+...

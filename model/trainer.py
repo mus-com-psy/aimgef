@@ -4,11 +4,9 @@ import errno
 import json
 
 import datetime
-from hyperpyyaml import load_hyperpyyaml
+import yaml
 from pathlib import Path
 from shutil import copyfile
-
-import numpy as np
 
 from tqdm import tqdm
 import torch
@@ -17,19 +15,12 @@ from torch.utils import data
 from torch.utils.tensorboard import SummaryWriter
 from torch.distributions import Categorical
 
-from models.vae import VAE
-from models.transformer import Transformer
-from models.optimizer import CustomSchedule
-from models.data import Dataset
-from models.loss import vae_loss, ce_loss, SmoothCrossEntropyLoss
-from utilities.midi_io import MIDI
-
-from models import (
-    CSQ_START_DISTRIBUTION,
-    CPI_START_DISTRIBUTION,
-    CSQ_TIME_QUANTIZATION,
-    CPI_TIME_QUANTIZATION
-)
+from .vae import VAE
+from .transformer import Transformer
+from .optimizer import CustomSchedule
+from .data import Dataset
+from .loss import vae_loss, ce_loss, SmoothCrossEntropyLoss
+from .utilities.file_io import MusicBox
 
 
 def mkdir(filename):
@@ -47,188 +38,7 @@ def timer(start, end):
     return h, m, s
 
 
-class CollateBatch:
-
-    def __init__(self, device):
-        self.device = device
-
-    def __call__(self, batch):
-        return torch.from_numpy(np.stack(batch, axis=0)).long().to(self.device)
-
-
-class TrainerBase:
-
-    def __init__(
-        self,
-        cfg_path,
-        device
-    ):
-        self.device = device
-        with open("hyperparameters.yaml") as f:
-            cfg = load_hyperpyyaml(f)
-        self.model = cfg["model"].to(self.device)
-        train_data = Dataset(
-            cfg["data_params"]["data_dir"],
-            "train",
-            cfg["data_params"]["seq_len"]
-        )
-        self.train_loader = data.DataLoader(
-            train_data,
-            batch_size=cfg["batch_size"],
-            shuffle=True,
-            pin_memory=True,
-            num_workers=0,
-            collate_fn=CollateBatch(device=self.device)
-        )
-        valid_data = Dataset(
-            cfg["data_params"]["data_dir"],
-            "validation",
-            cfg["data_params"]["seq_len"]
-        )
-        self.valid_loader = data.DataLoader(
-            valid_data,
-            batch_size=cfg["batch_size"],
-            shuffle=True,
-            pin_memory=True,
-            num_workers=0,
-            collate_fn=CollateBatch(device=self.device)
-        )
-        timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        self.logdir = os.path.join("experiments", timestamp)
-        self.writer = SummaryWriter(self.logdir)
-        copyfile(cfg_path, os.path.join(self.logdir, "config.yaml"))
-        opt = optim.Adam(
-            self.model.parameters(),
-            lr=0.00001,
-            betas=(0.9, 0.98),
-            eps=1e-9
-        )
-        self.scheduler = CustomSchedule(
-            self.model.d_model,
-            1,
-            4000,
-            optimizer=opt
-        )
-        self.sce_loss = SmoothCrossEntropyLoss(
-            0.1,
-            self.model.vocab_size
-        )
-        self.start_epoch = 0
-        self.end_epoch = cfg["train_params"]["epoch"]
-        self.save_step = cfg["train_params"]["save_step"]
-
-    def resume(self, ckpt_path: str):
-        ckpt = torch.load(ckpt_path, map_location=self.device)
-        self.scheduler.load_state_dict(ckpt["optimizer_state_dict"])
-        self.model.load_state_dict(ckpt["model_state_dict"])
-        self.start_epoch = ckpt["epoch"] + 1
-
-    def loss(self, batch):
-        raise NotImplementedError
-
-    def train(self, ckpt_path: str):
-        raise NotImplementedError
-
-    def generate(self, ckpt_path: str):
-        raise NotImplementedError
-
-
-class MTTrainer(TrainerBase):
-
-    def __init__(self, cfg_path, device):
-        super().__init__(cfg_path, device)
-
-    def loss(self, batch, recon_batch):
-        return self.sce_loss(recon_batch.transpose(1, 2), batch[:, 1:])
-
-    def train(self, ckpt_path: str = None):
-        if ckpt_path is not None:
-            self.resume(ckpt_path)
-
-        for e in range(self.start_epoch, self.end_epoch):
-            ##################
-            #     Train      #
-            ##################
-            self.model.train()
-            with tqdm(self.train_loader) as t:
-                t.set_description(f'Epoch {e}')
-                for batch in t:
-                    recon_batch = self.model(batch[:, :-1])
-                    loss = self.loss(batch, recon_batch)
-
-                    self.scheduler.optimizer.zero_grad()
-                    loss.backward()
-                    self.scheduler.step()
-
-                    norm = (batch != 0).sum().item()
-                    loss_norm = loss.item() / norm
-                    acc_norm = torch.eq(
-                        recon_batch.max(1)[1],
-                        batch[:, 1:]
-                    ).sum().item() / norm * 100.
-
-                    self.writer.add_scalar('TRAIN/loss', loss_norm)
-                    self.writer.add_scalar('TRAIN/accuracy', acc_norm)
-                    t.set_postfix(loss=loss_norm, accuracy=acc_norm)
-
-            ##################
-            #   Validation   #
-            ##################
-            self.model.eval()
-            with torch.no_grad():
-                for batch in self.valid_loader:
-                    recon_batch = self.model(batch[:, :-1])
-                    loss = self.loss(batch, recon_batch)
-
-                    norm = (batch != 0).sum().item()
-                    loss_norm = loss.item() / norm
-                    acc_norm = torch.eq(
-                        recon_batch.max(1)[1],
-                        batch[:, 1:]
-                    ).sum().item() / norm * 100.
-                    self.writer.add_scalar('VALID/loss', loss_norm)
-                    self.writer.add_scalar('VALID/accuracy', acc_norm)
-
-            ##################
-            #      Save      #
-            ##################
-            if e != 0 and e % self.save_step == 0:
-                torch.save(
-                    {
-                        'epoch': e,
-                        'model_state_dict': self.model.state_dict(),
-                        'optimizer_state_dict': self.scheduler.state_dict()
-                    },
-                    f'{self.logdir}/model_{e}.pt'
-                )
-
-    def generate(
-        self,
-        ckpt_path: str,
-        num_excerpts: int,
-        length: int,
-        save_dir: str,
-        time_quantization: list,
-        time_unit: str,
-        tempo: int = 120
-    ):
-        processor = MIDI(
-            time_quantization=time_quantization,
-            time_unit=time_unit
-        )
-        self.resume(ckpt_path)
-        self.model.eval()
-        with torch.no_grad():
-            z = Categorical(
-                torch.tensor(CSQ_START_DISTRIBUTION, device=self.device)
-                ).sample(sample_shape=[num_excerpts, 1])
-            outputs = self.model.decode(z, length=length).unsqueeze(1).cpu().numpy()
-        for i in range(num_excerpts):
-            mid = processor.to_midi([outputs[i]], tempo=tempo)
-            mid.write(os.path.join(save_dir, f'{i}.mid'))
-
-
-class Trainer(TrainerBase):
+class Trainer:
     def __init__(self, model_name, style, resume):
         if style == 'CSQ':
             self.start_dist = torch.tensor(
@@ -261,8 +71,7 @@ class Trainer(TrainerBase):
         self.model_name = model_name
         current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
         self.style = style
-        self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.resume = resume
         if resume:
             self.logdir = f"./experiment/{model_name}/{style}/{resume[0]}"
@@ -273,15 +82,13 @@ class Trainer(TrainerBase):
             with open("./model/config.yaml", 'r') as f:
                 config = yaml.safe_load(f)
         self.cfg = config[self.model_name]
-        train_data = Dataset("train", style, "token",
-                             self.cfg[style]["seq_len"])
+        train_data = Dataset("train", style, "token", self.cfg[style]["seq_len"])
         self.train_loader = data.DataLoader(train_data,
                                             batch_size=self.cfg["batch_size"],
                                             shuffle=True,
                                             pin_memory=True,
                                             num_workers=0)
-        valid_data = Dataset("validation", style, "token",
-                             self.cfg[style]["seq_len"])
+        valid_data = Dataset("validation", style, "token", self.cfg[style]["seq_len"])
         self.valid_loader = data.DataLoader(valid_data,
                                             batch_size=self.cfg["batch_size"],
                                             shuffle=True,
@@ -309,10 +116,8 @@ class Trainer(TrainerBase):
             self.model.load_state_dict(torch.load(
                 f"./experiment/{self.model_name}/{self.style}/{resume[0]}/model_{resume[1]}.pt"
             )["model_state_dict"])
-        opt = optim.Adam(self.model.parameters(), lr=0.0001,
-                         betas=(0.9, 0.98), eps=1e-9)
-        self.scheduler = CustomSchedule(
-            self.cfg["d_model"], 1, 4000, optimizer=opt)
+        opt = optim.Adam(self.model.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
+        self.scheduler = CustomSchedule(self.cfg["d_model"], 1, 4000, optimizer=opt)
         if resume:
             self.scheduler.load_state_dict(torch.load(
                 f"./experiment/{self.model_name}/{self.style}/{resume[0]}/model_{resume[1]}.pt"
@@ -320,8 +125,7 @@ class Trainer(TrainerBase):
         self.start_epoch = 1 if not resume else resume[1] + 1
         self.end_epoch = self.cfg["epoch"] + 1
         self.iteration = 0
-        self.sce_loss = SmoothCrossEntropyLoss(
-            0.1, self.cfg[style]["vocab_size"])
+        self.sce_loss = SmoothCrossEntropyLoss(0.1, self.cfg[style]["vocab_size"])
 
     def train(self):
         writer = SummaryWriter(self.logdir)
@@ -344,10 +148,8 @@ class Trainer(TrainerBase):
             for i, batch in enumerate(self.train_loader):
                 self.model.train()
                 if self.model_name == "VAE":
-                    batch = batch.long().view(
-                        batch_size, self.cfg[self.style]["num_tracks"], -1).to(self.device)
-                    recon_batch, output_mu, output_log_var = self.model.forward(
-                        batch)
+                    batch = batch.long().view(batch_size, self.cfg[self.style]["num_tracks"], -1).to(self.device)
+                    recon_batch, output_mu, output_log_var = self.model.forward(batch)
                     output_ce, output_kld = vae_loss(recon_batch,
                                                      batch,
                                                      output_mu,
@@ -358,8 +160,7 @@ class Trainer(TrainerBase):
                     recon_batch = self.model.forward(batch[:, :-1])
                     output_ce = 0
                     output_kld = 0
-                    loss = self.sce_loss(
-                        recon_batch.transpose(1, 2), batch[:, 1:])
+                    loss = self.sce_loss(recon_batch.transpose(1, 2), batch[:, 1:])
                 else:
                     raise ValueError("Invalid model name.")
 
@@ -370,11 +171,9 @@ class Trainer(TrainerBase):
                 loss_norm = loss.item() / norm
                 train_loss += loss_norm
                 if self.model_name == "VAE":
-                    acc_norm = torch.eq(recon_batch.max(
-                        1)[1], batch).sum().item() / norm * 100.
+                    acc_norm = torch.eq(recon_batch.max(1)[1], batch).sum().item() / norm * 100.
                 elif self.model_name == "Transformer":
-                    acc_norm = torch.eq(recon_batch.max(
-                        1)[1], batch[:, 1:]).sum().item() / norm * 100.
+                    acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
                 else:
                     raise ValueError("Invalid model name.")
                 train_acc += acc_norm
@@ -395,16 +194,13 @@ class Trainer(TrainerBase):
                         print(f'\t\t\tACC: {acc_norm:.2f}\tLOSS: {loss_norm:.6f}' +
                               f'\tCE: {output_ce.item() / norm:.6f}\tKLD: {output_kld.item() / norm:.6f}')
                     elif self.model_name == "Transformer":
-                        print(
-                            f'\t\t\tACC: {acc_norm:.2f}\tLOSS: {loss_norm:.6f}')
+                        print(f'\t\t\tACC: {acc_norm:.2f}\tLOSS: {loss_norm:.6f}')
             self.model.eval()
             with torch.no_grad():
                 for i, batch in enumerate(self.valid_loader):
                     if self.model_name == "VAE":
-                        batch = batch.long().view(
-                            batch_size, self.cfg[self.style]["num_tracks"], -1).to(self.device)
-                        recon_batch, output_mu, output_log_var = self.model.forward(
-                            batch)
+                        batch = batch.long().view(batch_size, self.cfg[self.style]["num_tracks"], -1).to(self.device)
+                        recon_batch, output_mu, output_log_var = self.model.forward(batch)
                         output_ce, output_kld = vae_loss(recon_batch,
                                                          batch,
                                                          output_mu,
@@ -413,19 +209,16 @@ class Trainer(TrainerBase):
                     elif self.model_name == "Transformer":
                         batch = batch.long().view(batch_size, -1).to(self.device)
                         recon_batch = self.model.forward(batch[:, :-1])
-                        loss = self.sce_loss(
-                            recon_batch.transpose(1, 2), batch[:, 1:])
+                        loss = self.sce_loss(recon_batch.transpose(1, 2), batch[:, 1:])
                     else:
                         raise ValueError("Invalid model name.")
                     norm = (batch != 0).sum().item()
                     loss_norm = loss.item() / norm
                     valid_loss += loss_norm
                     if self.model_name == "VAE":
-                        acc_norm = torch.eq(recon_batch.max(
-                            1)[1], batch).sum().item() / norm * 100.
+                        acc_norm = torch.eq(recon_batch.max(1)[1], batch).sum().item() / norm * 100.
                     elif self.model_name == "Transformer":
-                        acc_norm = torch.eq(recon_batch.max(
-                            1)[1], batch[:, 1:]).sum().item() / norm * 100.
+                        acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
                     else:
                         raise ValueError("Invalid model name.")
                     valid_acc += acc_norm
@@ -439,8 +232,7 @@ class Trainer(TrainerBase):
                 e, average_train_loss, average_train_acc))
             print('\t\t\tAverage validation Loss {:.4f}\tAccuracy: {:.2f}'.format(
                 average_valid_loss, average_valid_acc))
-            print('\t\t\tTime taking: {:.0f}.{:.0f}.{:.0f}'.format(
-                t[0], t[1], t[2]))
+            print('\t\t\tTime taking: {:.0f}.{:.0f}.{:.0f}'.format(t[0], t[1], t[2]))
             writer.add_scalar('TRAIN/LOSS', average_train_loss, e)
             writer.add_scalar('VALID/LOSS', average_valid_loss, e)
             writer.add_scalar('TRAIN/ACC', average_train_acc, e)
@@ -489,11 +281,9 @@ class Trainer(TrainerBase):
         self.model.eval()
         num_excerpts = 2
         if model_name == "VAE":
-            z = torch.rand(
-                num_excerpts, self.cfg['hidden_size'] * 2).to(self.device)
+            z = torch.rand(num_excerpts, self.cfg['hidden_size'] * 2).to(self.device)
         elif model_name == "Transformer":
-            z = Categorical(self.start_dist).sample(
-                sample_shape=[num_excerpts, 1]).to(self.device)
+            z = Categorical(self.start_dist).sample(sample_shape=[num_excerpts, 1]).to(self.device)
         else:
             raise ValueError("Invalid model name.")
 
@@ -506,11 +296,9 @@ class Trainer(TrainerBase):
                                                                         self.style,
                                                                         self.resume[0],
                                                                         start_index + i)).as_posix())
-
     def originality(self):
         writer = SummaryWriter(self.logdir)
-        copyfile((Path.cwd() / "model/config.yaml").as_posix(),
-                 "{}/config.yaml".format(self.logdir))
+        copyfile((Path.cwd() / "model/config.yaml").as_posix(), "{}/config.yaml".format(self.logdir))
         batch_size = self.cfg["batch_size"]
         self.model.train()
         for e in range(self.start_epoch, self.end_epoch):
@@ -523,8 +311,7 @@ class Trainer(TrainerBase):
                 self.scheduler.step()
                 norm = (batch != 0).sum().item()
                 loss_norm = loss.item() / norm
-                acc_norm = torch.eq(recon_batch.max(
-                    1)[1], batch[:, 1:]).sum().item() / norm * 100.
+                acc_norm = torch.eq(recon_batch.max(1)[1], batch[:, 1:]).sum().item() / norm * 100.
                 writer.add_scalar('TRAIN/LOSS', loss_norm, self.iteration)
                 writer.add_scalar('TRAIN/ACC', acc_norm, self.iteration)
                 if i % 11 == 0:
@@ -551,19 +338,15 @@ class Trainer(TrainerBase):
                     with torch.no_grad():
                         for valid_batch in tqdm(self.valid_loader):
                             valid_batch = valid_batch.long().view(batch_size, -1).to(self.device)
-                            recon_batch = self.model.forward(
-                                valid_batch[:, :-1])
+                            recon_batch = self.model.forward(valid_batch[:, :-1])
                             loss = ce_loss(recon_batch, valid_batch[:, 1:])
                             norm = (valid_batch != 0).sum().item()
                             loss_norm = loss.item() / norm
                             valid_loss += loss_norm
-                            acc_norm = torch.eq(recon_batch.max(
-                                1)[1], valid_batch[:, 1:]).sum().item() / norm * 100.
+                            acc_norm = torch.eq(recon_batch.max(1)[1], valid_batch[:, 1:]).sum().item() / norm * 100.
                             valid_acc += acc_norm
-                    writer.add_scalar(
-                        'VALID/LOSS', valid_loss / len(self.valid_loader), self.iteration)
-                    writer.add_scalar('VALID/ACC', valid_acc /
-                                      len(self.valid_loader), self.iteration)
+                    writer.add_scalar('VALID/LOSS', valid_loss / len(self.valid_loader), self.iteration)
+                    writer.add_scalar('VALID/ACC', valid_acc / len(self.valid_loader), self.iteration)
                     torch.save({'epoch': e,
                                 'model_state_dict': self.model.state_dict(),
                                 'optimizer_state_dict': self.scheduler.state_dict()},
