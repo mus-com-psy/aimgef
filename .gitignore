@@ -61,10 +61,12 @@ pubs_material/evomusart_extra/process/maestro/tmp.py
 bayes_factor/*.Rdata
 
 
-dataset
-experiment
+datasets
+experiments
 
 features/maia-features
 
 features/data
 features/figure/raincloud/R_rainclouds.R
+
+scratch
