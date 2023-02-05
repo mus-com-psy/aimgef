@@ -92,70 +92,6 @@ def get_data(composers):
         j.write(id_kern)
 
 
-def get_string_quartets(composers, target_tempo, target_movement):
-    filtered_index = []
-    unfiltered_index = []
-    mkdir("../../dataset/KernScores/CSQ/unfiltered/kern/")
-    mkdir("../../dataset/KernScores/CSQ/unfiltered/midi/")
-    mkdir("../../dataset/KernScores/CSQ/filtered/kern/")
-    mkdir("../../dataset/KernScores/CSQ/filtered/midi/")
-    for composer_name in composers:
-        print("Processing: " + composer_name)
-        # TODO: Not checking if composer exists
-        kern_list = os.listdir("../../dataset/KernScores/unprocessed/kern/" + composer_name + "/")
-        for kern in tqdm(kern_list):
-            kern_file = "../../dataset/KernScores/unprocessed/kern/" + composer_name + "/" + kern
-            midi_file = "../../dataset/KernScores/unprocessed/midi/" + composer_name + "/" + kern[:-4] + ".mid"
-            csq = False
-            tempo = False
-            movement = False
-            krn = copy.deepcopy(kern_dict)
-            krn["ID"] = kern[:-4]
-            with open(kern_file, "rb") as f:
-                for line in f.readlines():
-                    line = line.decode("utf-8", "backslashreplace")
-                    if "!!!COM:" in line:
-                        krn["Composer"] = line[8:].rstrip()
-                    elif "!!!OTL:" in line:
-                        krn["Piece"] = line[8:].rstrip()
-                        if "String Quartet" in krn["Piece"]:
-                            csq = True
-                    elif "!!!OPS:" in line:
-                        krn["Opus"] = line[8:].rstrip()
-                    elif "!!!ONM:" in line:
-                        krn["No"] = line[8:].rstrip()
-                    elif "!!!OMV:" in line:
-                        krn["Movement"] = line[8:].rstrip()
-                        if target_movement in krn["Movement"]:
-                            movement = True
-                    elif "!!!OMD:" in line:
-                        krn["Tempo"] = line[8:].rstrip()
-                        if any(t in krn["Tempo"] for t in target_tempo):
-                            tempo = True
-                    elif "!!!SCT:" in line:
-                        krn["Scholarly category"] = line[8:].rstrip()
-                    elif "!!!SCT1:" in line:
-                        krn["Scholarly category"] = line[9:].rstrip()
-                    elif "!!!URL:" in line:
-                        krn["URL"] = line[8:].rstrip()
-            if csq:
-                if movement and tempo:
-                    filtered_index.append(krn)
-                    copyfile(kern_file, "../../dataset/KernScores/CSQ/filtered/kern/" + kern)
-                    copyfile(midi_file, "../../dataset/KernScores/CSQ/filtered/midi/" + kern[:-4] + ".mid")
-                else:
-                    unfiltered_index.append(krn)
-                    copyfile(kern_file, "../../dataset/KernScores/CSQ/unfiltered/kern/" + kern)
-                    copyfile(midi_file, "../../dataset/KernScores/CSQ/unfiltered/midi/" + kern[:-4] + ".mid")
-
-    filtered_index = json.dumps(filtered_index, indent=4)
-    unfiltered_index = json.dumps(unfiltered_index, indent=4)
-    with open("../../dataset/KernScores/CSQ/filtered/index.json", "w") as j:
-        j.write(filtered_index)
-    with open("../../dataset/KernScores/CSQ/unfiltered/index.json", "w") as j:
-        j.write(unfiltered_index)
-
-
 def filtering(file_path):
     (Path.cwd() / "dataset/KernScores/CSQ/unfiltered/kern").mkdir(parents=True, exist_ok=True)
     (Path.cwd() / "dataset/KernScores/CSQ/unfiltered/midi").mkdir(parents=True, exist_ok=True)
@@ -249,4 +185,3 @@ def main():
     candidates = ["Beethoven", "Haydn", "Mozart"]
     get_data(composers_suffix)
     filtering(Path.cwd() / "dataset/KernScores/unprocessed/index.json")
-    # get_string_quartets(candidates, tempo_list, "1")

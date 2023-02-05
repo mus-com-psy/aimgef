@@ -1,0 +1,21 @@
+train_params:
+    epoch: 50000
+    batch_size: 4
+    num_epochs_to_save: 10
+    warmup_epoch: 20
+    warmup_rate: 0.1
+
+data_params:
+    data_dir: "datasets/CPI"
+    seq_len: 2048
+
+model: !new:models.VAE
+    vocab_size: 270
+    d_model: 2048
+    input_size: 512
+    hidden_size: 1024
+    encoder_num_layers: 2
+    conductor_num_layers: 2
+    decoder_num_layers: 2
+    dropout: 0.1
+    num_tracks: 4
