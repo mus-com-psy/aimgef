@@ -2,8 +2,8 @@ from .transformer import Transformer
 from .vae import VAE
 
 CSQ_TIME_QUANTIZATION = [
-    1 / 32, 1 / 16, 1 / 12, 1 / 8, 1 / 6, 3 / 16,
-    1 / 4, 1 / 3, 3 / 8, 1 / 2, 2 / 3, 3 / 4, 1
+    1 / 8, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4,
+    1, 4 / 3, 3 / 2, 2, 8 / 3, 3, 4
 ]
 
 CPI_TIME_QUANTIZATION = [(t / 100) for t in range(1, 101)]

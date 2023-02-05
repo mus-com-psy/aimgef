@@ -8,6 +8,7 @@ import itertools
 def identity(x):
     return x
 
+
 def validate_pitch(pitch):
     return 0 <= pitch <= 127
 
@@ -16,8 +17,7 @@ class MIDI:
     def __init__(
         self,
         time_quantization,
-        time_unit,
-        filename=None
+        time_unit
     ):
         if time_unit == "time":
             self.time_base_func = self.tick2time
@@ -29,24 +29,10 @@ class MIDI:
             raise KeyError("Invalid time unit.")
         self.time_quantization = time_quantization
 
-        if filename is not None:
-            self.filename = filename
-            self.source = pretty_midi.PrettyMIDI(filename)
-            # ticks per semibreve
-            self.resolution = self.source.resolution
-            tracks = self.source.instruments
-            self.num_tracks = len(tracks)
-            self.tracks_of_events = [
-                sorted(
-                    [
-                        event
-                        for note in track.notes
-                        for event in self.note2events(note)
-                    ],
-                    key=lambda x: (x.time, x.pitch)
-                )
-                for track in tracks
-            ]
+        self.resolution = 480
+        self.tempo = 120
+        self.source = pretty_midi.PrettyMIDI(resolution=self.resolution, initial_tempo=self.tempo)
+        self.num_tracks = 1
 
     @property
     def vocab(self):
@@ -61,16 +47,16 @@ class MIDI:
         )
 
     def time2tick(self, time):
-        return int(self.source.time_to_tick(time))
+        return self.source.time_to_tick(time)
 
     def tick2time(self, tick):
-        return float(self.source.tick_to_time(int(tick)))
+        return self.source.tick_to_time(int(tick))
 
     def crotchet2tick(self, crotchet):
-        return int(crotchet * self.resolution)
+        return crotchet * self.resolution
 
     def tick2crotchet(self, tick):
-        return float(tick / self.resolution)
+        return tick / self.resolution
 
     def crotchet2time(self, crotchet):
         return self.tick2time(self.crotchet2tick(crotchet))
@@ -116,19 +102,43 @@ class MIDI:
                 output.append(closest - 1 + self.vocab.time[0])
         return output
 
-    def process(self, ignore_velocity, merge_tracks, pitch_shift=0, time_scale=1):
+    def process(self, filename, ignore_velocity, merge_tracks, pitch_shift=0, time_scale=1):
+        self.source = pretty_midi.PrettyMIDI(filename)
+        # ticks per semibreve
+        self.resolution = self.source.resolution
+        tracks = self.source.instruments
+        self.num_tracks = len(tracks)
         if merge_tracks:
             tracks_of_events = [
-                event for track in self.events for event in track]
+                sorted(
+                    [
+                        event
+                        for track in tracks
+                        for note in track.notes
+                        for event in self.note2events(note)
+                    ],
+                    key=lambda x: (x.time, x.pitch)
+                )
+            ]
         else:
-            tracks_of_events = self.tracks_of_events
+            tracks_of_events = [
+                sorted(
+                    [
+                        event
+                        for note in track.notes
+                        for event in self.note2events(note)
+                    ],
+                    key=lambda x: (x.time, x.pitch)
+                )
+                for track in tracks
+            ]
 
         sequence = [[] for _ in range(len(tracks_of_events))]
-        cur_vel = -1
-        cur_time = 0
         keyboard = [[False for _ in range(128)]
                     for _ in range(self.num_tracks)]
         for i, track in enumerate(tracks_of_events):
+            cur_vel = -1
+            cur_time = 0
             for event in track:
                 event.pitch += pitch_shift
                 event.time *= time_scale
@@ -153,11 +163,11 @@ class MIDI:
                     cur_time = event.time
 
         sequence = list(
-            zip(*itertools.zip_longest(*sequence, fillvalue=self.vocab.pad)))
+            zip(*itertools.zip_longest(*sequence, fillvalue=self.vocab.pad))
+        )
         return np.array(sequence, dtype=int)
 
     def to_midi(self, sequence, tempo=120):
-        midi = pretty_midi.PrettyMIDI(resolution=480, initial_tempo=tempo)
         for track in sequence:
             instrument = pretty_midi.Instrument(program=0)
             onset = {n: [] for n in range(128)}
@@ -182,6 +192,8 @@ class MIDI:
                     # Remove all off events that happan before the on event
                     while len(offset[i]) > 0 and offset[i][0] - on_time <= 0:
                         _ = offset[i].pop(0)
+                    if len(offset[i]) == 0:
+                        break
                     off_time = offset[i].pop(0)
                     note = pretty_midi.Note(
                         velocity=on_vel,
@@ -190,5 +202,5 @@ class MIDI:
                         end=off_time
                     )
                     instrument.notes.append(note)
-            midi.instruments.append(instrument)
-        return midi
+            self.source.instruments.append(instrument)
+        return self.source
