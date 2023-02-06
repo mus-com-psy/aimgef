@@ -6,29 +6,37 @@ from models.layers.conductor import Conductor
 
 
 class VAE(nn.Module):
-    def __init__(self,
-                 input_size,
-                 hidden_size,
-                 encoder_num_layers,
-                 conductor_num_layers,
-                 decoder_num_layers,
-                 dropout,
-                 vocab_size,
-                 num_tracks):
-        super(VAE, self).__init__()
-        self.encoder = Encoder(input_size,
-                               hidden_size,
-                               encoder_num_layers,
-                               dropout,
-                               vocab_size)
-        self.conductor = Conductor(hidden_size * 2,
-                                   conductor_num_layers,
-                                   dropout,
-                                   num_tracks)
-        self.decoder = Decoder(hidden_size * 2,
-                               decoder_num_layers,
-                               dropout,
-                               vocab_size)
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        encoder_num_layers,
+        conductor_num_layers,
+        decoder_num_layers,
+        dropout,
+        vocab_size,
+        num_tracks
+    ):
+        super().__init__()
+        self.encoder = Encoder(
+            input_size,
+            hidden_size,
+            encoder_num_layers,
+            dropout,
+            vocab_size
+        )
+        self.conductor = Conductor(
+            hidden_size * 2,
+            conductor_num_layers,
+            dropout,
+            num_tracks
+        )
+        self.decoder = Decoder(
+            hidden_size * 2,
+            decoder_num_layers,
+            dropout,
+            vocab_size
+        )
 
     def forward(self, x):
         # x of shape (batch, track, seq_len)

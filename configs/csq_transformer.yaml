@@ -1,17 +1,20 @@
 train_params:
     epoch: 50000
     batch_size: 4
-    num_epochs_to_save: 10
+    save_step: 10
 
 data_params:
     data_dir: "datasets/CSQ"
     vocab_size: 270
     seq_len: 2048
 
+d_model: 512
+
 model: !new:models.Transformer
+    vocab_size: 270
     n_layer: 6
     n_head: 8
-    d_model: 512
+    d_model: !ref <d_model>
     d_head: 64
     d_inner: 2048
     dropout: 0.1

@@ -2,7 +2,17 @@ import os
 import random
 from glob import glob
 import numpy as np
+import torch
 from torch.utils import data
+
+
+class CollateBatch:
+
+    def __init__(self, device):
+        self.device = device
+
+    def __call__(self, batch):
+        return torch.from_numpy(np.stack(batch, axis=0)).long().to(self.device)
 
 
 class Dataset(data.Dataset):
@@ -10,11 +20,11 @@ class Dataset(data.Dataset):
         if split not in ['train', 'validation', 'test']:
             raise ValueError('Invalid partition.')
         self.length = length
-        self.filepaths = glob(os.path.join(self.data_dir, split, "**/*.npy"), recursive=True)
+        self.filepaths = glob(os.path.join(data_dir, split, "**/*.npy"), recursive=True)
         print(f'[Loaded dataset] [{data_dir} - {split}]')
 
     def __len__(self):
-        return self.len
+        return len(self.filepaths)
 
     def __getitem__(self, index):
         array = np.load(self.filepaths[index])

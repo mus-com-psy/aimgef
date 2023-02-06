@@ -9,9 +9,18 @@ from models.layers.attention import Embedding
 
 
 class Transformer(nn.Module):
-    def __init__(self, vocab, n_layer, n_head, d_model, d_head, d_inner, dropout):
-        super(Transformer, self).__init__()
-        self.embedding = Embedding(vocab, d_model)
+    def __init__(
+        self,
+        vocab_size,
+        n_layer,
+        n_head,
+        d_model,
+        d_head,
+        d_inner,
+        dropout
+    ):
+        super().__init__()
+        self.embedding = Embedding(vocab_size, d_model)
         self.layers = nn.ModuleList()
         for _ in range(n_layer):
             self.layers.append(
@@ -26,7 +35,7 @@ class Transformer(nn.Module):
             torch.randn(n_head, 1, d_head),
             requires_grad=True
         )
-        self.prob = nn.Sequential(nn.Linear(d_model, vocab))
+        self.prob = nn.Sequential(nn.Linear(d_model, vocab_size))
         self.drop = nn.Dropout(dropout)
 
     def forward(self, x):
